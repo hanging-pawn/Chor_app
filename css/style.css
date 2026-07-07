@@ -1,0 +1,42 @@
+/* Chorapp – Grund-Styling (Gerüst, iPhone-first) */
+
+:root {
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-primary: #2b4a6f;
+  --color-text: #1a1a1a;
+  --space: 1rem;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  /* Safe-Area-Insets für iPhone (Notch / Home-Indicator) */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.app-header {
+  background: var(--color-primary);
+  color: #fff;
+  padding: var(--space);
+  text-align: center;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.app-main {
+  padding: var(--space);
+  max-width: 600px;
+  margin: 0 auto;
+}

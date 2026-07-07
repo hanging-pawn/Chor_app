@@ -1,0 +1,156 @@
+{
+  "$schema": "./uebungen.schema.json",
+  "version": 1,
+  "uebungen": [
+    {
+      "id": "koerper-001",
+      "kategorie": "koerper",
+      "titel": "Recken und Strecken",
+      "anleitung": "Alle stehen locker, die Füsse hüftbreit. Mit der Einatmung beide Arme weit nach oben strecken, sich wie nach dem Aufwachen recken und dabei herzhaft gähnen. Mit der Ausatmung Arme und Oberkörper locker nach vorne fallen lassen und kurz ausbaumeln. Drei- bis viermal wiederholen."
+    },
+    {
+      "id": "koerper-002",
+      "kategorie": "koerper",
+      "titel": "Körper abklopfen",
+      "anleitung": "Mit lockeren Händen den ganzen Körper sanft abklopfen: Arme, Schultern, Brustkorb, Rücken (soweit erreichbar), Gesäss und Beine bis zu den Füssen. Dabei ruhig weiteratmen und den Kiefer locker lassen. Das weckt den Körper auf und bringt die Durchblutung in Gang."
+    },
+    {
+      "id": "koerper-003",
+      "kategorie": "koerper",
+      "titel": "Schultern und Nacken lösen",
+      "anleitung": "Beide Schultern langsam und gross nach hinten kreisen, etwa achtmal, dann die Richtung wechseln. Anschliessend den Kopf sanft zur Seite neigen, das Ohr Richtung Schulter, einige Atemzüge halten und die Seite wechseln. Keine ruckartigen Bewegungen, alles bleibt weich und langsam."
+    },
+    {
+      "id": "koerper-004",
+      "kategorie": "koerper",
+      "titel": "Hechelhund — Zwerchfell wecken",
+      "anleitung": "Mund leicht öffnen, Zunge entspannt, und wie ein Hund schnell und locker hecheln: kurze, leichte Atemstösse, der Bauch federt sichtbar mit. Etwa zehn Sekunden hecheln, dann eine ruhige Pause, insgesamt drei Durchgänge. Die Übung aktiviert das Zwerchfell und darf ausdrücklich lustig aussehen."
+    },
+    {
+      "id": "koerper-005",
+      "kategorie": "koerper",
+      "titel": "Schüttel-Minute",
+      "anleitung": "Eine Minute lang den ganzen Körper durchschütteln: erst die Hände, dann Arme, Schultern, Beine, zum Schluss alles gleichzeitig — gerne mit wackelnden Knien und losem Unterkiefer. Wer mag, gibt Töne dazu, ein lockeres Brummen oder Seufzen. Danach kurz still stehen und nachspüren."
+    },
+    {
+      "id": "koerper-006",
+      "kategorie": "koerper",
+      "titel": "Kiefer und Gesicht lockern",
+      "anleitung": "Mit den Fingerkuppen die Kaumuskeln vor den Ohren in kleinen Kreisen massieren, der Unterkiefer hängt dabei locker. Anschliessend das Gesicht abwechselnd ganz gross machen (Augen und Mund weit auf) und ganz klein (alles zusammenkneifen). Drei- bis viermal wechseln, zum Schluss herzhaft gähnen."
+    },
+    {
+      "id": "atem-001",
+      "kategorie": "atem",
+      "titel": "Bauchatmung spüren",
+      "anleitung": "Beide Hände auf den Bauch legen und durch die Nase tief in den Bauch einatmen, sodass sich die Hände sichtbar heben. Durch den leicht geöffneten Mund entspannt wieder ausströmen lassen. Die Schultern bleiben unten und ruhig. Sechs bis acht ruhige Atemzüge."
+    },
+    {
+      "id": "atem-002",
+      "kategorie": "atem",
+      "titel": "Stütze auf «sss»",
+      "anleitung": "Tief in den Bauch einatmen und die Luft auf einem gleichmässigen, stimmlosen «sss» ausströmen lassen — so lang und so konstant wie möglich. Die Bauchdecke gibt dabei langsam und kontrolliert nach, sie fällt nicht in sich zusammen. Drei Durchgänge, gerne mit dem Versuch, jedes Mal etwas länger zu werden."
+    },
+    {
+      "id": "atem-003",
+      "kategorie": "atem",
+      "titel": "Zwerchfell-Impulse «sch-sch-sch»",
+      "anleitung": "Nach einer tiefen Einatmung die Luft in kurzen, kräftigen Impulsen auf «sch-sch-sch» ausstossen, etwa sechs bis acht Impulse pro Atemzug. Eine Hand auf dem Bauch spürt, wie das Zwerchfell bei jedem Impuls federnd anspringt. Zwischen den Durchgängen die Luft einfach von selbst wieder einströmen lassen."
+    },
+    {
+      "id": "atem-004",
+      "kategorie": "atem",
+      "titel": "Brustraum öffnen",
+      "anleitung": "Mit der Einatmung beide Arme seitlich weit öffnen, als würde man jemanden zur Begrüssung empfangen — das Brustbein hebt sich leicht, die Rippen weiten sich. Mit der Ausatmung die Arme langsam sinken lassen, ohne in sich zusammenzufallen; die aufrechte Weite bleibt. Vier bis sechs Wiederholungen in ruhigem Tempo."
+    },
+    {
+      "id": "atem-005",
+      "kategorie": "atem",
+      "titel": "Kerzen auspusten",
+      "anleitung": "Sich eine Geburtstagstorte mit vielen Kerzen vorstellen: Nach tiefer Einatmung mit gezielten, kurzen «f»- oder «p»-Stössen eine Kerze nach der anderen auspusten. Die Impulse kommen aus dem Bauch, nicht aus dem Hals. Zwei bis drei Torten reichen — die Übung verbindet Stütze und Spielfreude."
+    },
+    {
+      "id": "atem-006",
+      "kategorie": "atem",
+      "titel": "Atembogen — lang ausatmen",
+      "anleitung": "Auf vier Zählzeiten durch die Nase einatmen, kurz innehalten und dann auf acht Zählzeiten gleichmässig auf «fff» ausatmen. Wenn das gut gelingt, die Ausatmung schrittweise auf zehn oder zwölf Zählzeiten verlängern. Die Übung beruhigt und schafft Bewusstsein für einen langen, getragenen Atembogen."
+    },
+    {
+      "id": "stimme-001",
+      "kategorie": "stimme",
+      "titel": "Summen im Dreitonraum",
+      "anleitung": "Auf einem bequemen mittleren Ton beginnen und auf «mmm» den Dreitonraum auf- und absummen. Die Lippen kribbeln leicht, der Ton sitzt vorne im Gesicht. In Halbtonschritten aufwärts wiederholen, solange es mühelos bleibt.",
+      "noten": "X:1\nT:Summen im Dreitonraum\nM:4/4\nL:1/4\nK:C\nC D E D | C4 |]"
+    },
+    {
+      "id": "stimme-002",
+      "kategorie": "stimme",
+      "titel": "Terzpendel auf «no»",
+      "anleitung": "Auf der Silbe «no» zwischen Grundton und Terz pendeln, weich und verbunden gesungen. Der Kiefer bleibt locker, das «n» bringt den Ton nach vorne. In Halbtonschritten aufwärts transponieren.",
+      "noten": "X:1\nT:Terzpendel\nM:4/4\nL:1/4\nK:C\nC E C E | C4 |]"
+    },
+    {
+      "id": "stimme-003",
+      "kategorie": "stimme",
+      "titel": "Quartsprung auf «ju»",
+      "anleitung": "Vom Grundton aus die Quarte aufwärts springen und wieder zurück, auf der Silbe «ju». Den oberen Ton nicht anschieben, sondern leicht von oben denken — wie ein freudiger Zuruf. Mehrmals wiederholen und dabei in Halbtonschritten steigen.",
+      "noten": "X:1\nT:Quartsprung\nM:4/4\nL:1/4\nK:C\nC F C F | C4 |]"
+    },
+    {
+      "id": "stimme-004",
+      "kategorie": "stimme",
+      "titel": "Fünftonraum abwärts auf «jo-o-o-o-o»",
+      "anleitung": "Auf der Quinte beginnen und den Fünftonraum stufenweise abwärts singen bis zum Grundton. Jeder Ton bekommt seine eigene Silbe «jo», die Linie bleibt trotzdem verbunden und getragen. Aufwärts transponieren, bis die Lage unbequem wird, dann wieder abwärts.",
+      "noten": "X:1\nT:Fuenftonraum abwaerts\nM:4/4\nL:1/4\nK:C\nG F E D | C4 |]"
+    },
+    {
+      "id": "stimme-005",
+      "kategorie": "stimme",
+      "titel": "Sextsprung auf «ha-lo»",
+      "anleitung": "Vom Grundton eine grosse Sexte aufwärts springen («ha-») und stufenweise zurück zum Grundton («-lo-o-o-o»). Vor dem Sprung an den oberen Ton denken und ihn schlank ansetzen, nicht von unten anschleifen. In Halbtonschritten aufwärts wiederholen.",
+      "noten": "X:1\nT:Sextsprung\nM:4/4\nL:1/4\nK:C\nC A G F | E D C2 |]"
+    },
+    {
+      "id": "stimme-006",
+      "kategorie": "stimme",
+      "titel": "Dreiklang zur Oktave",
+      "anleitung": "Den Dur-Dreiklang aufwärts bis zur Oktave singen und wieder abwärts, auf «ja» oder «mio». Die Oktave klingt leicht und obertonreich, nicht gestemmt — eher rufen als drücken. In Halbtonschritten steigen; das ist der krönende Abschluss des Einsingens im vollen Stimmumfang.",
+      "noten": "X:1\nT:Dreiklang zur Oktave\nM:4/4\nL:1/4\nK:C\nC E G c | G E C2 |]"
+    },
+    {
+      "id": "abschluss-001",
+      "kategorie": "abschluss",
+      "titel": "Kanon: Bruder Jakob",
+      "anleitung": "Den bekannten Kanon zuerst gemeinsam einstimmig singen, dann in zwei bis vier Gruppen versetzt einsetzen lassen. Auf lockere, leichte Tongebung achten — der Kanon dient dem gemeinsamen Ankommen, nicht der Perfektion. Gerne in einer bequemen mittleren Tonart beginnen."
+    },
+    {
+      "id": "abschluss-002",
+      "kategorie": "abschluss",
+      "titel": "Kanon: Froh zu sein bedarf es wenig",
+      "anleitung": "Diesen kurzen, fröhlichen Kanon einstimmig anstimmen und nach sicherem Durchgang in zwei oder drei Gruppen singen. Das Tempo beschwingt, aber nicht gehetzt halten. Ideal, um nach dem Einsingen direkt gute Stimmung für die Probe zu schaffen."
+    },
+    {
+      "id": "abschluss-003",
+      "kategorie": "abschluss",
+      "titel": "Kanon: Hejo, spann den Wagen an",
+      "anleitung": "Den Kanon zunächst gemeinsam singen, dann zwei- bis dreistimmig versetzt. Auf rhythmische Genauigkeit achten — die punktierten Stellen geben dem Kanon seinen Schwung. Wer mag, lässt eine Gruppe dazu leise den Grundpuls klatschen oder stampfen."
+    },
+    {
+      "id": "abschluss-004",
+      "kategorie": "abschluss",
+      "titel": "Kanon: Viel Glück und viel Segen",
+      "anleitung": "Diesen warmen, getragenen Kanon einstimmig singen und anschliessend in zwei bis vier Gruppen aufteilen. Auf weiche Einsätze und einen runden, gemeinsamen Klang achten. Besonders schön als Abschluss, wenn jemand aus dem Chor Geburtstag hat."
+    },
+    {
+      "id": "abschluss-005",
+      "kategorie": "abschluss",
+      "titel": "Kanon: C-A-F-F-E-E",
+      "anleitung": "Den Kaffee-Kanon zuerst einstimmig durchsingen, dabei die Buchstaben-Töne deutlich artikulieren. Danach in zwei oder drei Gruppen versetzt singen. Die klare Textartikulation macht den Kanon zugleich zu einer guten Diktions-Übung mit Augenzwinkern."
+    },
+    {
+      "id": "abschluss-006",
+      "kategorie": "abschluss",
+      "titel": "Lied: Es tönen die Lieder",
+      "anleitung": "Dieses kurze Frühlingslied gemeinsam einstimmig singen, fliessend und in einem ruhigen Dreiertakt. Auf lange Phrasenbögen und gemeinsames Atmen achten — es fasst die Einsing-Arbeit von Atem und Stimme noch einmal zusammen. Es kann auch als Kanon gesungen werden, wenn der Chor sicher ist."
+    }
+  ]
+}

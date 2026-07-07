@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hanging-pawn.github.io/Chor_app/data/uebungen.schema.json",
+  "title": "Chorapp Übungsdaten",
+  "description": "Schema für die Übungs-Bibliothek der Chorapp. Datendatei ist bewusst vom Anwendungscode getrennt (AR-002, NF-020).",
+  "type": "object",
+  "required": ["version", "uebungen"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optionaler Verweis auf diese Schema-Datei (Editor-Validierung)."
+    },
+    "version": {
+      "type": "integer",
+      "description": "Schema-/Datenformat-Version, für spätere Migrationen.",
+      "minimum": 1
+    },
+    "uebungen": {
+      "type": "array",
+      "description": "Liste aller verfügbaren Übungen. Zielumfang: mindestens 12 pro Kategorie (FA-030).",
+      "items": { "$ref": "#/$defs/uebung" }
+    }
+  },
+  "$defs": {
+    "uebung": {
+      "type": "object",
+      "description": "Eine einzelne Einsing-Einheit, genau einer Kategorie zugeordnet.",
+      "required": ["id", "kategorie", "titel", "anleitung"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Eindeutige, stabile Kennung der Übung (z. B. 'koerper-001'). Wird intern referenziert.",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "kategorie": {
+          "type": "string",
+          "description": "Gliederung der Übung. Bestimmt Reihenfolge im Set: Körper → Atem → Stimme → Abschluss (FA-002, FA-003).",
+          "enum": ["koerper", "atem", "stimme", "abschluss"]
+        },
+        "titel": {
+          "type": "string",
+          "description": "Kurzer, sprechender Name der Übung (Anzeige im Set, FA-020).",
+          "minLength": 1
+        },
+        "anleitung": {
+          "type": "string",
+          "description": "Textliche Anleitung zur Durchführung der Übung (FA-020).",
+          "minLength": 1
+        },
+        "noten": {
+          "type": "string",
+          "description": "Optional. Notenbild im Fünfliniensystem für Stimm-/Intervallübungen (FA-021, Phase 5). Pfad zu einer vorbereiteten Notengrafik (z. B. 'noten/stimme-001.svg') oder maschinenlesbare Notation für eine Notensatz-Bibliothek. Darf später nachgereicht werden (R-002)."
+        }
+      }
+    }
+  }
+}
