@@ -4099,7 +4099,7 @@
       <div class="heute-section" id="heuteSection"
            role="region" aria-label="Heutige Probe">
         <div class="heute-section-header">
-          <span class="heute-section-title">Heute · Probe</span>
+          <span class="heute-section-title" id="heuteSectionTitle">Nächste Probe</span>
           <span class="heute-count" id="heuteCount"></span>
         </div>
         <div class="heute-list" id="heuteList" role="list"
@@ -4624,22 +4624,47 @@ const POOL = {
     {
       title: "Kanon: «Dona nobis pacem»",
       anleitung: "Dreistimmig. S1 beginnt — S2 setzt nach 4 Takten ein — S3 nach weiteren 4 Takten. Ruhiges ¾-Takt.",
+      // Traditional / public domain (Quelle: John-Chambers-Sammlung, abcnotation.com)
+      noten: `X:1
+T:Dona nobis pacem
+M:3/4
+L:1/4
+K:D
+(d/A/) f2 | (e/A/) g2 | (f e) d | d c2 | (b a/g/f/e/) | (a3/ g/) f | (f/e/) (d c) | d3 |
+a3 | a3 | (a g) f | f e2 | b b2 | a a2 | (a/g/) (f e) | d3 |
+d3 | c3 | (d3 e/) (f/g/) | a A2 | g g2 | f f2 | (c/e/) (a A) | d3 |]`,
     },
     {
       title: "Kanon: «Jubilate Deo»",
-      anleitung: "Zweistimmig (Palestrina). S2 setzt nach 2 Takten ein. Piano beginnen, gebunden singen.",
+      anleitung: "Zweistimmig (Praetorius). S2 setzt nach 2 Takten ein. Piano beginnen, gebunden singen.",
+      // Michael Praetorius (1571–1621), public domain (Quelle: abcnotation.com)
+      noten: `X:1
+T:Jubilate Deo
+M:4/4
+L:1/4
+K:C
+c2 d2 | ec cB | cA G>F | EF D2 | C2 GG | C2 z2 |]`,
     },
     {
       title: "Kanon: «Kookaburra»",
       anleitung: "Zweistimmig. S2 setzt nach 4 Takten ein. Deutliche Vokale, klares Tempo.",
+      // Kein Notenbild: Melodie (M. Sinclair, 1932) noch urheberrechtlich geschützt.
     },
     {
       title: "Kanon: «Frère Jacques»",
       anleitung: "Vierstimmig. Jede Stimme setzt nach 4 Takten ein. Artikulation klar, auf Zusammenklang achten.",
+      // Traditional / public domain (Quelle: folkinfo.org via abcnotation.com)
+      noten: `X:1
+T:Frère Jacques
+M:4/4
+L:1/8
+K:G
+G2 A2 B2 G2 | G2 A2 B2 G2 | B2 c2 d4 | B2 c2 d4 | de dc B2 G2 | de dc B2 G2 | G2 D2 G4 | G2 D2 G4 |]`,
     },
     {
       title: "Kanon: «Make new friends»",
       anleitung: "Zweistimmig. S2 setzt nach 2 Takten ein. Ruhig und klangvoll — Legatobogen halten.",
+      // Kein Notenbild: keine verifiziert gemeinfreie Melodie-Quelle gefunden.
     },
   ],
 };
@@ -6751,28 +6776,45 @@ async function loadHeuteAndRender() {
   const sb = getSupabase();
   const listEl  = document.getElementById('heuteList');
   const countEl = document.getElementById('heuteCount');
+  const titleEl = document.getElementById('heuteSectionTitle');
   if (!listEl) return;
 
   let rows = [];
   if (sb && APP_STATE.chorId) {
+    // Next planned rehearsal = today or later; take the earliest date.
     const { data, error } = await sb
       .from('proben_lieder')
-      .select('reihenfolge, lieder ( id, titel, status, pdf_pfad )')
+      .select('datum, reihenfolge, lieder ( id, titel, status, pdf_pfad )')
       .eq('chor_id', APP_STATE.chorId)
-      .eq('datum', todayStr())
+      .gte('datum', todayStr())
+      .order('datum', { ascending: true })
       .order('reihenfolge', { ascending: true });
 
     if (error) {
       console.warn('[Chorapp] Tagesprobe load error:', error.message);
     } else {
-      rows = (data ?? []).filter(r => r.lieder); // guard dangling refs
+      const all = (data ?? []).filter(r => r.lieder); // guard dangling refs
+      const naechstesDatum = all.length > 0 ? all[0].datum : null;
+      rows = naechstesDatum ? all.filter(r => r.datum === naechstesDatum) : [];
+
+      // Dynamic label: "Heute · Probe" if today, else "Nächste Probe · <date>"
+      if (titleEl) {
+        if (!naechstesDatum) {
+          titleEl.textContent = 'Nächste Probe';
+        } else if (naechstesDatum === todayStr()) {
+          titleEl.textContent = 'Heute · Probe';
+        } else {
+          titleEl.textContent = `Nächste Probe · ${formatNotizenDate(naechstesDatum)}`;
+        }
+      }
     }
   }
 
   // Empty state (FA-052)
   if (rows.length === 0) {
     countEl.textContent = '';
-    listEl.innerHTML = '<p class="heute-empty">Noch keine Lieder für heute geplant.</p>';
+    if (titleEl) titleEl.textContent = 'Nächste Probe';
+    listEl.innerHTML = '<p class="heute-empty">Noch keine Probe geplant.</p>';
     return;
   }
 
