@@ -1784,24 +1784,34 @@
       flex-wrap: wrap;
     }
 
-    /* FA-042: "Dem Chor mitteilen" toggle */
-    .toggle-markiert {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      cursor: pointer;
-      -webkit-user-select: none;
-      user-select: none;
+    /* Notiztyp — Segmented Control (ersetzt die frühere Checkbox "markiert").
+       Allgemeine Notiz = nur für Anja. Mitteilung = geht an den Chor. */
+    .notiz-typ-seg {
+      display: inline-flex;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-chip);
+      padding: 3px;
+      gap: 3px;
     }
-    .toggle-markiert input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--accent);
+    .notiz-typ-seg button {
+      background: none;
+      border: none;
+      border-radius: calc(var(--radius-chip) - 3px);
+      color: var(--text-secondary);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      min-height: 38px;
       cursor: pointer;
-      flex-shrink: 0;
+      white-space: nowrap;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .notiz-typ-seg button:hover { color: var(--text-primary); }
+    .notiz-typ-seg button[aria-pressed="true"] {
+      background: var(--accent-dark);
+      color: #fff;
     }
 
     .btn-save-notiz {
@@ -2346,6 +2356,82 @@
       line-height: 1.55;
     }
 
+    /* Dauerhafte Notiz am Lied (Migration 010) — unter dem Titel, gedämpft */
+    .heute-card-notiz {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      padding-left: 9px;
+      border-left: 2px solid rgba(45,212,191,0.45);
+      white-space: pre-wrap;
+    }
+
+    /* ══════════════════════════════════════════════
+       PROBENÜBERSICHT — Kopfzeile mit Pianist + PDF
+    ══════════════════════════════════════════════ */
+    .probe-kopf {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .probe-kopf-datum {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .probe-kopf-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+
+    .probe-pianist-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+
+    .probe-pianist-select {
+      background: var(--bg-glass);
+      border: 1.5px solid var(--bg-glass-border);
+      border-radius: var(--radius-chip);
+      color: var(--text-primary);
+      font-family: var(--font);
+      font-size: 14px;
+      padding: 9px 12px;
+      min-height: 42px;
+      flex: 1;
+      min-width: 130px;
+    }
+
+    .btn-probe-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(45,212,191,0.12);
+      border: 1.5px solid rgba(45,212,191,0.55);
+      border-radius: var(--radius-chip);
+      color: var(--accent);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 16px;
+      min-height: 42px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.12s ease;
+    }
+    .btn-probe-pdf:active  { opacity: 0.65; }
+    .btn-probe-pdf.loading { opacity: 0.5; pointer-events: none; }
+
     /* ══════════════════════════════════════════════
        DESKTOP LAYOUT (≥ 900px) — Planning mode
     ══════════════════════════════════════════════ */
@@ -2568,6 +2654,8 @@
 
       /* «Heute» section on desktop — aligned with card list */
       .heute-section { padding: 4px 40px 8px; }
+      .probe-kopf    { padding: 16px 40px; flex-direction: row;
+                       align-items: center; justify-content: space-between; }
       .heute-list {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -3098,7 +3186,9 @@
 
     <nav class="sidebar-nav" role="navigation" aria-label="Hauptnavigation">
 
-      <!-- Einsingen (active) -->
+      <!-- Nächste Probe (active) — vormals «Einsingen».
+           data-tab bleibt bewusst "einsingen": die ID steckt in switchTab(),
+           TABS und diversen Initialisierungen. Reines Label-Rename. -->
       <button class="snav-item is-active" data-tab="einsingen" aria-current="page">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -3107,7 +3197,7 @@
           <circle cx="6" cy="18" r="3"/>
           <circle cx="18" cy="16" r="3"/>
         </svg>
-        <span>Einsingen</span>
+        <span>Nächste Probe</span>
       </button>
 
       <!-- Probennotizen (v1.1 — FA-040–042) -->
@@ -3346,6 +3436,15 @@
             <option value="einstudiert">Einstudiert</option>
             <option value="konzertbereit">Konzertbereit</option>
           </select>
+        </div>
+
+        <!-- Dauerhafte Notiz am Lied (Migration 010).
+             Erscheint in der Probenübersicht und im Pianisten-PDF. -->
+        <div class="form-group">
+          <label class="form-label" for="liedNotiz">Notiz zum Lied</label>
+          <textarea class="form-input" id="liedNotiz" rows="3"
+                    placeholder="z. B. Tenor-Einsatz T. 24 heikel"
+                    autocomplete="off" spellcheck="true"></textarea>
         </div>
 
         <!-- PDF upload — FA-053/054 (Supabase Storage, bucket noten-pdfs) -->
@@ -3595,6 +3694,9 @@
         <button class="mg-subnav-btn" id="mgSubnavAktionen"
                 role="tab" aria-selected="false"
                 onclick="switchMgSubview('aktionen')">Aktionen</button>
+        <button class="mg-subnav-btn" id="mgSubnavPianisten"
+                role="tab" aria-selected="false"
+                onclick="switchMgSubview('pianisten')">Pianisten</button>
       </div>
 
       <!-- ── Sub-view: Liste (FA-080) ── -->
@@ -3787,7 +3889,67 @@
         </div>
       </div><!-- #mgAktionenSub -->
 
+      <!-- ── Sub-view: Pianisten (Migration 011) ──
+           Bewusst hier statt als eigener Tab: die Bottom-Nav hat auf dem
+           iPhone keinen Platz für einen siebten Eintrag. -->
+      <div class="mg-sub hidden" id="mgPianistenSub">
+        <div class="mg-toolbar">
+          <button class="btn-add-uebung" onclick="openPianistForm()" type="button"
+                  aria-label="Pianist hinzufügen">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Pianist hinzufügen
+          </button>
+        </div>
+        <div class="rep-list" id="pianistenListEl" role="list"
+             aria-label="Pianistinnen und Pianisten"></div>
+      </div><!-- #mgPianistenSub -->
+
     </div><!-- #mitgliederView -->
+
+    <!-- ── Add / Edit Pianist modal (Migration 011) ── -->
+    <div class="modal-backdrop hidden" id="pianistModal" role="dialog"
+         aria-modal="true" aria-label="Pianist"
+         onclick="closePianistForm(event)">
+      <div class="modal-sheet">
+        <div class="modal-title" id="pianistModalTitle">✚ Pianist hinzufügen</div>
+
+        <div class="form-group">
+          <label class="form-label" for="pianistVorname">Vorname</label>
+          <input class="form-input" id="pianistVorname" type="text"
+                 autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="pianistNachname">Nachname</label>
+          <input class="form-input" id="pianistNachname" type="text"
+                 autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="pianistEmail">E-Mail</label>
+          <input class="form-input" id="pianistEmail" type="email"
+                 placeholder="name@example.com"
+                 autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="pianistTelefon">Telefon (optional)</label>
+          <input class="form-input" id="pianistTelefon" type="tel"
+                 autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-form-cancel" onclick="closePianistForm()">Abbrechen</button>
+          <button class="btn-form-save" id="btnPianistSave"
+                  onclick="submitPianistForm()">Speichern</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Mobile: Mitglied-Detail bottom sheet (read-only) -->
     <div class="modal-backdrop hidden" id="mgDetailModal"
@@ -4036,12 +4198,15 @@
                   placeholder="Beobachtungen, Infos, Bemerkungen zur Probe …"
                   aria-label="Notizinhalt"></textarea>
 
-        <!-- FA-042: mark toggle -->
+        <!-- Notiztyp — ersetzt die frühere Checkbox "Dem Chor mitteilen" -->
         <div class="notizen-editor-actions">
-          <label class="toggle-markiert" for="notizenMarkiert">
-            <input type="checkbox" id="notizenMarkiert">
-            ☑ Dem Chor mitteilen
-          </label>
+          <div class="notiz-typ-seg" id="notizenTypSeg" role="group"
+               aria-label="Art der Notiz">
+            <button type="button" data-typ="allgemein" aria-pressed="true"
+                    onclick="setNotizTyp('allgemein')">Allgemeine Notiz</button>
+            <button type="button" data-typ="mitteilung" aria-pressed="false"
+                    onclick="setNotizTyp('mitteilung')">Mitteilung an den Chor</button>
+          </div>
           <button class="btn-save-notiz" id="btnSaveNotiz" onclick="saveNotiz()"
                   aria-label="Notiz speichern">Speichern</button>
         </div>
@@ -4068,22 +4233,91 @@
     <main class="main" id="main">
 
       <!-- ════════════════════════════════════════════
-           NOTIZEN ZUR PROBE — AP-0301
-           Gekoppelt an dieselbe probennotizen-Zeile wie der Notiz-Tab
-           (datum = nächste geplante Probe). Steht bewusst zuoberst.
+           PROBENÜBERSICHT — Kopf: Datum, Pianist, PDF-Versand
+      ════════════════════════════════════════════ -->
+      <div class="probe-kopf" id="probeKopfSection"
+           role="region" aria-label="Kopf der nächsten Probe">
+        <div class="probe-kopf-datum" id="probeKopfDatum">Nächste Probe</div>
+        <div class="probe-kopf-actions">
+          <label class="probe-pianist-label" for="probePianistSelect">Pianist</label>
+          <select class="probe-pianist-select" id="probePianistSelect"
+                  onchange="savePianistZuordnung()"
+                  aria-label="Pianist für diese Probe">
+            <option value="">— keiner —</option>
+          </select>
+          <button class="btn-probe-pdf" id="btnProbePdf"
+                  onclick="sendProbePDF()" type="button"
+                  aria-label="Probenunterlagen als PDF senden">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7,10 12,15 17,10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Als PDF senden
+          </button>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════
+           BLOCK 1 — MITTEILUNGEN AN DEN CHOR
+           probennotizen mit typ = 'mitteilung' (Migration 009)
+      ════════════════════════════════════════════ -->
+      <div class="heute-section" id="probeMitteilungSection"
+           role="region" aria-label="Mitteilungen an den Chor">
+        <div class="heute-section-header">
+          <span class="heute-section-title">📌 Mitteilungen an den Chor</span>
+        </div>
+        <textarea class="notizen-textarea" id="probeMitteilungInhalt" rows="3"
+                  placeholder="Was der Chor an dieser Probe erfahren soll …"
+                  aria-label="Mitteilungen an den Chor"></textarea>
+        <div class="notizen-editor-actions">
+          <button class="btn-save-notiz" id="btnSaveProbeMitteilung"
+                  onclick="saveProbeNotiz('mitteilung')"
+                  aria-label="Mitteilung speichern">Speichern</button>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════
+           BLOCK 2 — NOTIZEN ZUR PROBE (nur für Anja)
+           probennotizen mit typ = 'allgemein' — AP-0301
       ════════════════════════════════════════════ -->
       <div class="heute-section" id="einsingenNotizSection"
            role="region" aria-label="Notizen zur Probe">
         <div class="heute-section-header">
-          <span class="heute-section-title" id="einsingenNotizTitle">Notizen zur Probe</span>
+          <span class="heute-section-title" id="einsingenNotizTitle">📝 Notizen zur Probe</span>
         </div>
         <textarea class="notizen-textarea" id="einsingenNotizInhalt" rows="4"
-                  placeholder="Notizen zur nächsten Probe …"
+                  placeholder="Beobachtungen und Vorhaben für die nächste Probe …"
                   aria-label="Notizen zur nächsten Probe"></textarea>
         <div class="notizen-editor-actions">
           <button class="btn-save-notiz" id="btnSaveEinsingenNotiz"
-                  onclick="saveEinsingenNotiz()"
+                  onclick="saveProbeNotiz('allgemein')"
                   aria-label="Notiz zur Probe speichern">Speichern</button>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════
+           BLOCK 3 — LIEDER DER PROBE — FA-052 (v1.2)
+           Inklusive dauerhafter Liednotiz (Migration 010).
+      ════════════════════════════════════════════ -->
+      <div class="heute-section" id="heuteSection"
+           role="region" aria-label="Lieder der Probe">
+        <div class="heute-section-header">
+          <span class="heute-section-title" id="heuteSectionTitle">🎵 Lieder</span>
+          <span class="heute-count" id="heuteCount"></span>
+        </div>
+        <div class="heute-list" id="heuteList" role="list"
+             aria-label="Lieder der Probe"></div>
+      </div>
+
+      <!-- ════════════════════════════════════════════
+           BLOCK 4 — EINSINGEN
+      ════════════════════════════════════════════ -->
+      <div class="heute-section" id="einsingenBlockHeader">
+        <div class="heute-section-header">
+          <span class="heute-section-title">🎤 Einsingen</span>
         </div>
       </div>
 
@@ -4110,20 +4344,6 @@
           <span class="set-count" id="setCount"></span>
         </div>
         <div class="card-list" id="cardList" role="list"></div>
-      </div>
-
-      <!-- ════════════════════════════════════════════
-           TAGESPROBE «HEUTE» — FA-052 (v1.2)
-           Songs planned for today's rehearsal, in order.
-      ════════════════════════════════════════════ -->
-      <div class="heute-section" id="heuteSection"
-           role="region" aria-label="Heutige Probe">
-        <div class="heute-section-header">
-          <span class="heute-section-title" id="heuteSectionTitle">Nächste Probe</span>
-          <span class="heute-count" id="heuteCount"></span>
-        </div>
-        <div class="heute-list" id="heuteList" role="list"
-             aria-label="Lieder der heutigen Probe"></div>
       </div>
 
       <!-- ── Eigene Übungen (FA-031, FA-032) ── -->
@@ -4183,7 +4403,7 @@
 
       <!-- Einsingen (active) -->
       <button class="bnav-item is-active" data-tab="einsingen"
-              aria-label="Einsingen" aria-current="page">
+              aria-label="Nächste Probe" aria-current="page">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
              stroke-linejoin="round" aria-hidden="true">
@@ -4191,7 +4411,7 @@
           <circle cx="6" cy="18" r="3"/>
           <circle cx="18" cy="16" r="3"/>
         </svg>
-        <span>Einsingen</span>
+        <span>Probe</span>
       </button>
 
       <!-- Probennotizen (v1.1 — FA-040–042) -->
@@ -5049,6 +5269,9 @@ function handleGenerate() {
     setTimeout(() => {
       const set = generateSet();
       renderSet(set);
+      // Migration 012: Set an der nächsten Probe festmachen, damit es auch
+      // Tage später noch für das Pianisten-PDF zur Verfügung steht.
+      saveProbeSet(set);
 
       btn.classList.remove("loading");
       dots.classList.add("hidden");
@@ -5080,8 +5303,8 @@ function closeHelp(event) {
 /** Metadata for each top-level tab. */
 const TABS = {
   einsingen: {
-    title:        'Einsingen',
-    subtitle:     '5–6 Übungen · individuell generiert',
+    title:        'Nächste Probe',
+    subtitle:     'Mitteilungen, Notizen, Lieder & Einsingen',
     showBottomBar: true,
   },
   probennotizen: {
@@ -5642,6 +5865,7 @@ function switchMgSubview(view) {
   const liste     = view === 'liste';
   const beitraege = view === 'beitraege';
   const aktionen  = view === 'aktionen';
+  const pianisten = view === 'pianisten';
 
   document.getElementById('mgSubnavListe').classList.toggle('is-active',    liste);
   document.getElementById('mgSubnavListe').setAttribute('aria-selected',    String(liste));
@@ -5649,14 +5873,20 @@ function switchMgSubview(view) {
   document.getElementById('mgSubnavBeitraege').setAttribute('aria-selected', String(beitraege));
   document.getElementById('mgSubnavAktionen').classList.toggle('is-active',  aktionen);
   document.getElementById('mgSubnavAktionen').setAttribute('aria-selected',  String(aktionen));
+  document.getElementById('mgSubnavPianisten').classList.toggle('is-active', pianisten);
+  document.getElementById('mgSubnavPianisten').setAttribute('aria-selected', String(pianisten));
 
   document.getElementById('mgListeSub').classList.toggle('hidden',     !liste);
   document.getElementById('mgBeitraegeSub').classList.toggle('hidden', !beitraege);
   document.getElementById('mgAktionenSub').classList.toggle('hidden',  !aktionen);
+  document.getElementById('mgPianistenSub').classList.toggle('hidden', !pianisten);
 
   if (beitraege) {
     if (!_beitInit) { populateHalbjahrSelector(); _beitInit = true; }
     loadBeitraegeAndRender();
+  }
+  if (pianisten) {
+    loadPianistenAndRender();
   }
 }
 
@@ -6079,6 +6309,16 @@ async function generateAbrechnungPDF() {
 let _notizenCache    = [];
 /** UUID of the note currently open in the editor; null = create new. */
 let _notizenEditingId = null;
+/** Currently selected note type: 'allgemein' | 'mitteilung' (migration 009). */
+let _notizenTyp = 'allgemein';
+
+/** Switches the note-type segmented control and keeps the ARIA state in sync. */
+function setNotizTyp(typ) {
+  _notizenTyp = (typ === 'mitteilung') ? 'mitteilung' : 'allgemein';
+  document.querySelectorAll('#notizenTypSeg button').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.typ === _notizenTyp));
+  });
+}
 /** True once the view has been initialised for the current session. */
 let _notizenLoaded   = false;
 
@@ -6108,7 +6348,7 @@ async function loadNotizenAndRender() {
 
   const { data, error } = await sb
     .from('probennotizen')
-    .select('id, datum, inhalt, markiert, erstellt_am')
+    .select('id, datum, inhalt, typ, erstellt_am')
     .eq('chor_id', APP_STATE.chorId)
     .order('datum', { ascending: false });
 
@@ -6126,14 +6366,13 @@ async function loadNotizenAndRender() {
 
 /** Persists the current editor state to Supabase. */
 async function saveNotiz() {
-  const datumEl    = document.getElementById('notizenDatum');
-  const inhaltEl   = document.getElementById('notizenInhalt');
-  const markiertEl = document.getElementById('notizenMarkiert');
-  const btn        = document.getElementById('btnSaveNotiz');
+  const datumEl  = document.getElementById('notizenDatum');
+  const inhaltEl = document.getElementById('notizenInhalt');
+  const btn      = document.getElementById('btnSaveNotiz');
 
-  const datum    = datumEl.value;
-  const inhalt   = inhaltEl.value.trim();
-  const markiert = markiertEl.checked;
+  const datum  = datumEl.value;
+  const inhalt = inhaltEl.value.trim();
+  const typ    = _notizenTyp;
 
   // Require non-empty content
   if (!inhalt) {
@@ -6149,22 +6388,42 @@ async function saveNotiz() {
     return;
   }
 
+  // Migration 009 erlaubt pro Datum genau eine Notiz je Typ. Statt den
+  // Unique-Konflikt der Datenbank abzuwarten (und Text zu verlieren), wird
+  // die Kollision hier abgefangen und der Text auf Wunsch angehängt.
+  const kollision = _notizenCache.find(n =>
+    n.datum === datum && (n.typ ?? 'allgemein') === typ && n.id !== _notizenEditingId
+  );
+  let zielId  = _notizenEditingId;
+  let inhaltZuSpeichern = inhalt;
+
+  if (kollision) {
+    const label = typ === 'mitteilung' ? 'Mitteilung' : 'allgemeine Notiz';
+    const ok = confirm(
+      `Für den ${formatNotizenDate(datum)} gibt es bereits eine ${label}.\n\n` +
+      `OK: Der neue Text wird unten angehängt.\nAbbrechen: nichts speichern.`
+    );
+    if (!ok) return;
+    inhaltZuSpeichern = `${(kollision.inhalt ?? '').trim()}\n\n${inhalt}`.trim();
+    zielId = kollision.id;
+  }
+
   // Visual loading state
   btn.classList.add('loading');
   btn.textContent = '…';
 
   let error;
-  if (_notizenEditingId) {
+  if (zielId) {
     // Update existing note
     ({ error } = await sb
       .from('probennotizen')
-      .update({ datum, inhalt, markiert })
-      .eq('id', _notizenEditingId));
+      .update({ datum, inhalt: inhaltZuSpeichern, typ })
+      .eq('id', zielId));
   } else {
     // Insert new note
     ({ error } = await sb
       .from('probennotizen')
-      .insert({ chor_id: APP_STATE.chorId, datum, inhalt, markiert }));
+      .insert({ chor_id: APP_STATE.chorId, datum, inhalt: inhaltZuSpeichern, typ }));
   }
 
   btn.classList.remove('loading');
@@ -6186,9 +6445,9 @@ async function saveNotiz() {
 /** Resets the editor to a blank new note (today's date). */
 function newNotizenEditor() {
   _notizenEditingId = null;
-  document.getElementById('notizenDatum').value     = new Date().toISOString().split('T')[0];
-  document.getElementById('notizenInhalt').value    = '';
-  document.getElementById('notizenMarkiert').checked = false;
+  document.getElementById('notizenDatum').value  = new Date().toISOString().split('T')[0];
+  document.getElementById('notizenInhalt').value = '';
+  setNotizTyp('allgemein');
 
   // Remove editing highlight from all cards
   document.querySelectorAll('.notiz-card.is-editing').forEach(c => c.classList.remove('is-editing'));
@@ -6206,9 +6465,9 @@ function openNotizenById(id) {
   if (!note) return;
 
   _notizenEditingId = note.id;
-  document.getElementById('notizenDatum').value     = note.datum;
-  document.getElementById('notizenInhalt').value    = note.inhalt ?? '';
-  document.getElementById('notizenMarkiert').checked = note.markiert ?? false;
+  document.getElementById('notizenDatum').value  = note.datum;
+  document.getElementById('notizenInhalt').value = note.inhalt ?? '';
+  setNotizTyp(note.typ ?? 'allgemein');
 
   // Highlight active card in the list
   document.querySelectorAll('.notiz-card').forEach(c => {
@@ -6252,13 +6511,15 @@ function renderNotizenList(notes) {
     const preview = (n.inhalt ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
     const ellipsis = (n.inhalt ?? '').length > 80 ? '…' : '';
     const dateStr  = formatNotizenDate(n.datum);
-    const markBadge = n.markiert
-      ? `<span class="notiz-mark-badge">☑ Dem Chor mitteilen</span>`
+    // Migration 009: Mitteilung ersetzt das frühere Boolean `markiert`.
+    const istMitteilung = (n.typ ?? 'allgemein') === 'mitteilung';
+    const markBadge = istMitteilung
+      ? `<span class="notiz-mark-badge">📌 Mitteilung an den Chor</span>`
       : '';
 
-    // FA-103: show "Per E-Mail senden" button for marked notes.
+    // FA-103: show "Per E-Mail senden" button for announcements.
     // Clicks are stopped from bubbling so they don't open the note editor.
-    const emailBtn = n.markiert
+    const emailBtn = istMitteilung
       ? `<button class="notiz-email-btn"
                  data-probeninfo-btn="${escHtml(n.id)}"
                  onclick="event.stopPropagation();sendProbeninfo('${escHtml(n.id)}')"
@@ -6275,13 +6536,13 @@ function renderNotizenList(notes) {
       : '';
 
     return `
-      <div class="notiz-card${n.markiert ? ' is-marked' : ''}"
+      <div class="notiz-card${istMitteilung ? ' is-marked' : ''}"
            data-note-id="${escHtml(n.id)}"
            role="listitem button"
            tabindex="0"
            onclick="openNotizenById('${escHtml(n.id)}')"
            onkeydown="if(event.key==='Enter'||event.key===' ')openNotizenById('${escHtml(n.id)}')"
-           aria-label="Notiz vom ${escHtml(dateStr)}${n.markiert ? ', dem Chor mitzuteilen' : ''}">
+           aria-label="${istMitteilung ? 'Mitteilung' : 'Notiz'} vom ${escHtml(dateStr)}">
         <div class="notiz-card-top">
           <span class="notiz-card-datum">${escHtml(dateStr)}</span>
           ${markBadge}
@@ -6355,7 +6616,7 @@ async function loadLiederAndRender() {
 
   const { data, error } = await sb
     .from('lieder')
-    .select('id, titel, status, pdf_pfad')
+    .select('id, titel, status, pdf_pfad, notiz')
     .eq('chor_id', APP_STATE.chorId)
     .order('titel', { ascending: true });
 
@@ -6397,6 +6658,9 @@ function renderRepList() {
       <span class="rep-row-title">${escHtml(l.titel)}</span>
       ${statusBadge(l.status)}
       ${notenChip(l.pdf_pfad)}
+      ${(l.notiz && l.notiz.trim())
+        ? `<span class="noten-chip has-pdf" title="${escHtml(l.notiz.trim())}">📝 Notiz</span>`
+        : ''}
       <div class="rep-row-actions">
         <button class="btn-icon"
                 onclick="openLiedForm('${escHtml(l.id)}')"
@@ -6426,6 +6690,7 @@ function openLiedForm(id) {
     lied ? '✏ Lied bearbeiten' : '✚ Lied hinzufügen';
   document.getElementById('liedTitel').value  = lied?.titel ?? '';
   document.getElementById('liedStatus').value = lied?.status ?? 'bearbeitung';
+  document.getElementById('liedNotiz').value  = lied?.notiz ?? '';
   document.getElementById('liedPdfInput').value = '';
   document.getElementById('liedPdfName').textContent = lied?.pdf_pfad
     ? 'PDF vorhanden — neue Datei wählen, um zu ersetzen'
@@ -6476,6 +6741,8 @@ async function submitLiedForm() {
   const titelEl = document.getElementById('liedTitel');
   const titel   = titelEl.value.trim();
   const status  = document.getElementById('liedStatus').value;
+  // Leere Notiz als null speichern, damit kein Leerstring in der Anzeige landet.
+  const notiz   = document.getElementById('liedNotiz').value.trim() || null;
   const btn     = document.getElementById('btnLiedSave');
 
   if (!titel) {
@@ -6500,14 +6767,14 @@ async function submitLiedForm() {
     if (liedId) {
       const { error } = await sb
         .from('lieder')
-        .update({ titel, status })
+        .update({ titel, status, notiz })
         .eq('id', liedId)
         .eq('chor_id', APP_STATE.chorId);
       if (error) throw error;
     } else {
       const { data, error } = await sb
         .from('lieder')
-        .insert({ chor_id: APP_STATE.chorId, titel, status })
+        .insert({ chor_id: APP_STATE.chorId, titel, status, notiz })
         .select('id')
         .single();
       if (error) throw error;
@@ -6805,9 +7072,10 @@ async function loadHeuteAndRender() {
   let rows = [];
   if (sb && APP_STATE.chorId) {
     // Next planned rehearsal = today or later; take the earliest date.
+    // notiz kommt aus Migration 010 — dauerhafter Hinweis am Lied.
     const { data, error } = await sb
       .from('proben_lieder')
-      .select('datum, reihenfolge, lieder ( id, titel, status, pdf_pfad )')
+      .select('datum, reihenfolge, lieder ( id, titel, status, pdf_pfad, notiz )')
       .eq('chor_id', APP_STATE.chorId)
       .gte('datum', todayStr())
       .order('datum', { ascending: true })
@@ -6819,24 +7087,16 @@ async function loadHeuteAndRender() {
       const all = (data ?? []).filter(r => r.lieder); // guard dangling refs
       const naechstesDatum = all.length > 0 ? all[0].datum : null;
       rows = naechstesDatum ? all.filter(r => r.datum === naechstesDatum) : [];
-
-      // Dynamic label: "Heute · Probe" if today, else "Nächste Probe · <date>"
-      if (titleEl) {
-        if (!naechstesDatum) {
-          titleEl.textContent = 'Nächste Probe';
-        } else if (naechstesDatum === todayStr()) {
-          titleEl.textContent = 'Heute · Probe';
-        } else {
-          titleEl.textContent = `Nächste Probe · ${formatNotizenDate(naechstesDatum)}`;
-        }
-      }
     }
   }
+
+  // Der Titel bleibt statisch «🎵 Lieder» — das Datum steht in der Kopfzeile
+  // der Probenübersicht (#probeKopfDatum).
+  if (titleEl) titleEl.textContent = '🎵 Lieder';
 
   // Empty state (FA-052)
   if (rows.length === 0) {
     countEl.textContent = '';
-    if (titleEl) titleEl.textContent = 'Nächste Probe';
     listEl.innerHTML = '<p class="heute-empty">Noch keine Probe geplant.</p>';
     return;
   }
@@ -6852,12 +7112,18 @@ async function loadHeuteAndRender() {
          </button>`
       : '';
 
+    // Dauerhafte Liednotiz (Migration 010), falls gepflegt.
+    const notizZeile = (l.notiz && l.notiz.trim())
+      ? `<div class="heute-card-notiz">${escHtml(l.notiz.trim())}</div>`
+      : '';
+
     return `
       <div class="heute-card" role="listitem">
         <span class="heute-num" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
         <div class="heute-card-body">
           <div class="heute-card-title">${escHtml(l.titel)}</div>
           ${statusBadge(l.status)}
+          ${notizZeile}
         </div>
         ${notenBtn}
       </div>
@@ -6897,45 +7163,76 @@ async function getNaechsteProbeDatum() {
   return (data && data.length) ? data[0].datum : null;
 }
 
-/** Lädt die probennotizen-Zeile der nächsten Probe ins Einsingen-Notizfeld. */
+/** Mapping Notiztyp → DOM-Element und Beschriftung. */
+const PROBE_NOTIZ_FELDER = {
+  allgemein:  { textareaId: 'einsingenNotizInhalt',  btnId: 'btnSaveEinsingenNotiz'  },
+  mitteilung: { textareaId: 'probeMitteilungInhalt', btnId: 'btnSaveProbeMitteilung' },
+};
+
+/**
+ * Lädt beide Notiztypen der nächsten Probe in die Felder der Probenübersicht
+ * und aktualisiert Kopfzeile sowie Pianisten-Auswahl.
+ */
 async function loadEinsingenNotiz() {
-  const inhaltEl = document.getElementById('einsingenNotizInhalt');
-  const titleEl  = document.getElementById('einsingenNotizTitle');
-  if (!inhaltEl) return;
+  const titleEl = document.getElementById('einsingenNotizTitle');
+  const kopfEl  = document.getElementById('probeKopfDatum');
+  if (!document.getElementById('einsingenNotizInhalt')) return;
 
   const datum = (await getNaechsteProbeDatum()) || todayStr();
   _einsingenNotizDatum = datum;
 
-  if (titleEl) {
-    titleEl.textContent = (datum === todayStr())
-      ? 'Notizen zur Probe · Heute'
-      : `Notizen zur Probe · ${formatNotizenDate(datum)}`;
-  }
+  const heute    = (datum === todayStr());
+  const datumTxt = heute ? 'Heute' : formatNotizenDate(datum);
+
+  if (titleEl) titleEl.textContent = `📝 Notizen zur Probe · ${datumTxt}`;
+  if (kopfEl)  kopfEl.textContent  = heute
+    ? 'Heute · Probe'
+    : `Nächste Probe · ${datumTxt}`;
+
+  // Pianisten-Dropdown und gespeichertes Einsing-Set parallel nachladen.
+  loadPianistenForProbe(datum);
+  restoreProbeSet(datum);
 
   const sb = getSupabase();
-  if (!sb || !APP_STATE.chorId) { inhaltEl.value = ''; return; }
+  if (!sb || !APP_STATE.chorId) {
+    Object.values(PROBE_NOTIZ_FELDER).forEach(f => {
+      const el = document.getElementById(f.textareaId);
+      if (el) el.value = '';
+    });
+    return;
+  }
 
   const { data, error } = await sb
     .from('probennotizen')
-    .select('inhalt')
+    .select('inhalt, typ')
     .eq('chor_id', APP_STATE.chorId)
-    .eq('datum', datum)
-    .limit(1);
+    .eq('datum', datum);
 
   if (error) {
-    console.warn('[Chorapp] Einsingen-Notiz load error:', error.message);
+    console.warn('[Chorapp] Probennotizen load error:', error.message);
     return;
   }
-  inhaltEl.value = (data && data.length) ? (data[0].inhalt ?? '') : '';
+
+  // Jedes Feld füllen — auch leer, damit kein Text der Vorprobe stehenbleibt.
+  Object.entries(PROBE_NOTIZ_FELDER).forEach(([typ, f]) => {
+    const el = document.getElementById(f.textareaId);
+    if (!el) return;
+    const row = (data ?? []).find(r => (r.typ ?? 'allgemein') === typ);
+    el.value = row ? (row.inhalt ?? '') : '';
+  });
 }
 
 /**
- * Speichert das Einsingen-Notizfeld in dieselbe probennotizen-Zeile (Upsert).
- * Ein bestehendes `markiert`-Flag bleibt unangetastet.
+ * Speichert ein Feld der Probenübersicht in die probennotizen-Zeile
+ * (chor_id, datum, typ) — dieselbe Datenquelle wie der Notiz-Tab.
+ * Leerer Text löscht die Zeile, damit keine leeren Notizen zurückbleiben.
  */
-async function saveEinsingenNotiz() {
-  const inhaltEl = document.getElementById('einsingenNotizInhalt');
-  const btn      = document.getElementById('btnSaveEinsingenNotiz');
+async function saveProbeNotiz(typ) {
+  const feld = PROBE_NOTIZ_FELDER[typ];
+  if (!feld) return;
+
+  const inhaltEl = document.getElementById(feld.textareaId);
+  const btn      = document.getElementById(feld.btnId);
   if (!inhaltEl) return;
 
   const sb = getSupabase();
@@ -6949,30 +7246,37 @@ async function saveEinsingenNotiz() {
 
   if (btn) { btn.classList.add('loading'); btn.textContent = '…'; }
 
-  // Existiert für dieses Datum schon eine Notiz? → update (markiert bleibt), sonst insert.
   const { data: existing, error: selErr } = await sb
     .from('probennotizen')
     .select('id')
     .eq('chor_id', APP_STATE.chorId)
     .eq('datum', datum)
+    .eq('typ', typ)
     .limit(1);
 
   let error;
   if (!selErr && existing && existing.length) {
+    if (inhalt) {
+      ({ error } = await sb
+        .from('probennotizen')
+        .update({ inhalt })
+        .eq('id', existing[0].id));
+    } else {
+      ({ error } = await sb
+        .from('probennotizen')
+        .delete()
+        .eq('id', existing[0].id));
+    }
+  } else if (inhalt) {
     ({ error } = await sb
       .from('probennotizen')
-      .update({ inhalt })
-      .eq('id', existing[0].id));
-  } else {
-    ({ error } = await sb
-      .from('probennotizen')
-      .insert({ chor_id: APP_STATE.chorId, datum, inhalt, markiert: false }));
+      .insert({ chor_id: APP_STATE.chorId, datum, inhalt, typ }));
   }
 
   if (btn) { btn.classList.remove('loading'); btn.textContent = 'Speichern'; }
 
   if (error) {
-    console.error('[Chorapp] Einsingen-Notiz save error:', error.message);
+    console.error('[Chorapp] Probennotiz save error:', error.message);
     alert('Fehler beim Speichern: ' + error.message);
     return;
   }
@@ -6981,6 +7285,460 @@ async function saveEinsingenNotiz() {
   if (typeof _notizenLoaded !== 'undefined' && _notizenLoaded) {
     await loadNotizenAndRender();
   }
+}
+
+/** Rückwärtskompatibler Alias — der alte Button hiess saveEinsingenNotiz(). */
+function saveEinsingenNotiz() { return saveProbeNotiz('allgemein'); }
+
+// =============================================================================
+// Einsing-Set persistieren — Migration 012 (Tabelle proben_set)
+// Ohne Persistenz lebte das Set nur in currentSet und war nach einem Reload
+// weg — für das Pianisten-PDF muss es Tage später noch abrufbar sein.
+// =============================================================================
+
+/** Speichert das erzeugte Set als Snapshot am Datum der nächsten Probe. */
+async function saveProbeSet(set) {
+  const sb = getSupabase();
+  if (!sb || !APP_STATE.chorId || !Array.isArray(set) || set.length === 0) return;
+
+  const datum = _einsingenNotizDatum || (await getNaechsteProbeDatum()) || todayStr();
+
+  const { error } = await sb
+    .from('proben_set')
+    .upsert({ chor_id: APP_STATE.chorId, datum, set_json: set },
+            { onConflict: 'chor_id,datum' });
+
+  if (error) {
+    // Kein Alert: das Set steht auf dem Bildschirm, nur die Ablage schlug fehl.
+    console.warn('[Chorapp] Probe-Set save error:', error.message);
+  }
+}
+
+/** Holt das gespeicherte Set eines Datums; null, wenn keines existiert. */
+async function fetchProbeSet(datum) {
+  const sb = getSupabase();
+  if (!sb || !APP_STATE.chorId) return null;
+
+  const { data, error } = await sb
+    .from('proben_set')
+    .select('set_json')
+    .eq('chor_id', APP_STATE.chorId)
+    .eq('datum', datum)
+    .limit(1);
+
+  if (error) {
+    console.warn('[Chorapp] Probe-Set load error:', error.message);
+    return null;
+  }
+  return (data && data.length) ? data[0].set_json : null;
+}
+
+/** Stellt ein gespeichertes Set beim Laden der Seite wieder her. */
+async function restoreProbeSet(datum) {
+  if (currentSet) return;               // frisch generiertes Set nicht überschreiben
+  const set = await fetchProbeSet(datum);
+  if (Array.isArray(set) && set.length) renderSet(set);
+}
+
+// =============================================================================
+// Pianisten — Migration 011 (Tabellen pianisten, proben_pianist)
+// Verwaltung im Mitglieder-Tab; Zuordnung in der Probenübersicht.
+// =============================================================================
+
+let _pianistenCache  = [];
+let _pianistEditingId = null;
+/** Aktuell der Probe zugeordneter Pianist (UUID) oder ''. */
+let _probePianistId  = '';
+
+/** Lädt alle Pianisten des aktiven Chors und rendert die Verwaltungsliste. */
+async function loadPianistenAndRender() {
+  const sb = getSupabase();
+  if (!sb || !APP_STATE.chorId) { _pianistenCache = []; renderPianistenList(); return; }
+
+  const { data, error } = await sb
+    .from('pianisten')
+    .select('id, vorname, nachname, email, telefon, aktiv')
+    .eq('chor_id', APP_STATE.chorId)
+    .order('nachname', { ascending: true })
+    .order('vorname',  { ascending: true });
+
+  if (error) {
+    console.warn('[Chorapp] Pianisten load error:', error.message);
+    _pianistenCache = [];
+  } else {
+    _pianistenCache = data ?? [];
+  }
+  renderPianistenList();
+}
+
+function renderPianistenList() {
+  const el = document.getElementById('pianistenListEl');
+  if (!el) return;
+
+  if (_pianistenCache.length === 0) {
+    el.innerHTML = '<p class="rep-empty">Noch keine Pianisten erfasst.<br>Füge mit «Pianist hinzufügen» den ersten hinzu.</p>';
+    return;
+  }
+
+  el.innerHTML = _pianistenCache.map(p => `
+    <div class="rep-row" role="listitem">
+      <span class="rep-row-title">${escHtml(p.vorname)} ${escHtml(p.nachname)}</span>
+      <span class="noten-chip has-pdf">${escHtml(p.email)}</span>
+      <div class="rep-row-actions">
+        <button class="btn-icon"
+                onclick="openPianistForm('${escHtml(p.id)}')"
+                aria-label="Pianist bearbeiten: ${escHtml(p.vorname)} ${escHtml(p.nachname)}">
+          ${ICON_EDIT}
+        </button>
+        <button class="btn-icon btn-icon--danger"
+                onclick="deletePianist('${escHtml(p.id)}')"
+                aria-label="Pianist löschen: ${escHtml(p.vorname)} ${escHtml(p.nachname)}">
+          ${ICON_DEL}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openPianistForm(id) {
+  _pianistEditingId = id ?? null;
+  const p = id ? _pianistenCache.find(x => x.id === id) : null;
+
+  document.getElementById('pianistModalTitle').textContent =
+    p ? '✏ Pianist bearbeiten' : '✚ Pianist hinzufügen';
+  document.getElementById('pianistVorname').value  = p?.vorname  ?? '';
+  document.getElementById('pianistNachname').value = p?.nachname ?? '';
+  document.getElementById('pianistEmail').value    = p?.email    ?? '';
+  document.getElementById('pianistTelefon').value  = p?.telefon  ?? '';
+
+  document.getElementById('pianistModal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('pianistVorname').focus(), 60);
+}
+
+function closePianistForm(event) {
+  if (event && event.target !== document.getElementById('pianistModal')) return;
+  document.getElementById('pianistModal').classList.add('hidden');
+  document.body.style.overflow = '';
+  _pianistEditingId = null;
+}
+
+async function submitPianistForm() {
+  const vornameEl  = document.getElementById('pianistVorname');
+  const nachnameEl = document.getElementById('pianistNachname');
+  const emailEl    = document.getElementById('pianistEmail');
+  const btn        = document.getElementById('btnPianistSave');
+
+  const vorname  = vornameEl.value.trim();
+  const nachname = nachnameEl.value.trim();
+  const email    = emailEl.value.trim();
+  const telefon  = document.getElementById('pianistTelefon').value.trim() || null;
+
+  // Alle drei Pflichtfelder werden gebraucht: ohne E-Mail kein PDF-Versand.
+  const fehlend = !vorname ? vornameEl : !nachname ? nachnameEl : !email ? emailEl : null;
+  if (fehlend) {
+    fehlend.focus();
+    fehlend.style.borderColor = '#f87171';
+    setTimeout(() => { fehlend.style.borderColor = ''; }, 1400);
+    return;
+  }
+
+  const sb = getSupabase();
+  if (!sb || !APP_STATE.chorId) {
+    alert('Keine Verbindung zu Supabase — Pianist kann nicht gespeichert werden.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Speichern …';
+
+  let error;
+  if (_pianistEditingId) {
+    ({ error } = await sb
+      .from('pianisten')
+      .update({ vorname, nachname, email, telefon })
+      .eq('id', _pianistEditingId)
+      .eq('chor_id', APP_STATE.chorId));
+  } else {
+    ({ error } = await sb
+      .from('pianisten')
+      .insert({ chor_id: APP_STATE.chorId, vorname, nachname, email, telefon }));
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Speichern';
+
+  if (error) {
+    console.error('[Chorapp] Pianist save error:', error.message);
+    alert('Fehler beim Speichern: ' + error.message);
+    return;
+  }
+
+  closePianistForm();
+  await loadPianistenAndRender();
+  // Dropdown der Probenübersicht mitziehen.
+  if (_einsingenNotizDatum) await loadPianistenForProbe(_einsingenNotizDatum);
+}
+
+async function deletePianist(id) {
+  const p = _pianistenCache.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`«${p.vorname} ${p.nachname}» wirklich löschen?\n\nBestehende Proben-Zuordnungen werden mitgelöscht.`)) return;
+
+  const sb = getSupabase();
+  if (!sb || !APP_STATE.chorId) return;
+
+  const { error } = await sb
+    .from('pianisten')
+    .delete()
+    .eq('id', id)
+    .eq('chor_id', APP_STATE.chorId);
+
+  if (error) {
+    console.error('[Chorapp] Pianist delete error:', error.message);
+    alert('Fehler beim Löschen: ' + error.message);
+    return;
+  }
+  await loadPianistenAndRender();
+  if (_einsingenNotizDatum) await loadPianistenForProbe(_einsingenNotizDatum);
+}
+
+/** Füllt das Pianisten-Dropdown der Probenübersicht und wählt den zugeordneten. */
+async function loadPianistenForProbe(datum) {
+  const sel = document.getElementById('probePianistSelect');
+  if (!sel) return;
+
+  const sb = getSupabase();
+  if (!sb || !APP_STATE.chorId) return;
+
+  if (_pianistenCache.length === 0) {
+    const { data } = await sb
+      .from('pianisten')
+      .select('id, vorname, nachname, email, telefon, aktiv')
+      .eq('chor_id', APP_STATE.chorId)
+      .order('nachname', { ascending: true });
+    _pianistenCache = data ?? [];
+  }
+
+  const { data: zuord } = await sb
+    .from('proben_pianist')
+    .select('pianist_id')
+    .eq('chor_id', APP_STATE.chorId)
+    .eq('datum', datum)
+    .limit(1);
+
+  _probePianistId = (zuord && zuord.length) ? zuord[0].pianist_id : '';
+
+  sel.innerHTML = '<option value="">— keiner —</option>' +
+    _pianistenCache
+      .filter(p => p.aktiv !== false || p.id === _probePianistId)
+      .map(p => `<option value="${escHtml(p.id)}">${escHtml(p.vorname)} ${escHtml(p.nachname)}</option>`)
+      .join('');
+  sel.value = _probePianistId;
+}
+
+// =============================================================================
+// Proben-PDF für den Pianisten
+// Inhalt: Kopf, Einsingen, Lieder mit Notiz, Notizen zur Probe, Mitteilungen.
+// Noten-PDFs werden als Link aufgeführt, nicht angehängt (Grösse).
+// =============================================================================
+
+/** Sammelt alle Inhalte der Probe aus Supabase. */
+async function collectProbeDaten(datum) {
+  const sb = getSupabase();
+  if (!sb || !APP_STATE.chorId) return null;
+
+  const [notizenRes, liederRes, setJson] = await Promise.all([
+    sb.from('probennotizen')
+      .select('inhalt, typ')
+      .eq('chor_id', APP_STATE.chorId)
+      .eq('datum', datum),
+    sb.from('proben_lieder')
+      .select('reihenfolge, lieder ( titel, status, pdf_pfad, notiz )')
+      .eq('chor_id', APP_STATE.chorId)
+      .eq('datum', datum)
+      .order('reihenfolge', { ascending: true }),
+    fetchProbeSet(datum),
+  ]);
+
+  const notizen = notizenRes.data ?? [];
+  const finde   = t => (notizen.find(n => (n.typ ?? 'allgemein') === t)?.inhalt ?? '').trim();
+
+  return {
+    datum,
+    allgemein:  finde('allgemein'),
+    mitteilung: finde('mitteilung'),
+    lieder:     (liederRes.data ?? []).filter(r => r.lieder).map(r => r.lieder),
+    // Fällt auf das gerade angezeigte Set zurück, falls noch nichts gespeichert ist.
+    set:        Array.isArray(setJson) && setJson.length ? setJson : (currentSet ?? []),
+  };
+}
+
+/** Baut das A4-PDF und gibt das jsPDF-Dokument zurück. */
+function buildProbePDF(d, pianistName) {
+  const { jsPDF } = window.jspdf;
+  const doc   = new jsPDF({ unit: 'mm', format: 'a4' });
+  const left  = 18;
+  const right = 192;                    // 210 mm Seitenbreite − 18 mm Rand
+  const breite = right - left;
+  let   y     = 22;
+
+  const seitenumbruch = (need = 8) => { if (y + need > 285) { doc.addPage(); y = 22; } };
+
+  /** Schreibt umgebrochenen Fliesstext und schiebt y weiter. */
+  const absatz = (text, size = 10, style = 'normal', indent = 0) => {
+    doc.setFont('helvetica', style); doc.setFontSize(size);
+    doc.splitTextToSize(String(text), breite - indent).forEach(zeile => {
+      seitenumbruch(6);
+      doc.text(zeile, left + indent, y);
+      y += size <= 10 ? 5 : 6;
+    });
+  };
+
+  const abschnitt = (titel) => {
+    seitenumbruch(16);
+    y += 4;
+    doc.setDrawColor(180); doc.setLineWidth(0.3); doc.line(left, y, right, y);
+    y += 6;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text(titel, left, y);
+    y += 7;
+  };
+
+  // ── Kopf ──
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+  doc.text('Probenunterlagen', left, y); y += 9;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+  doc.text(`Chor: ${APP_STATE.chorName ?? ''}`, left, y); y += 6;
+  doc.text(`Probe: ${fmtDateDE(d.datum)}`, left, y); y += 6;
+  if (pianistName) { doc.text(`Für: ${pianistName}`, left, y); y += 6; }
+
+  // ── Einsingen ──
+  abschnitt('Einsingen');
+  if (d.set.length === 0) {
+    absatz('Noch kein Einsing-Set generiert.', 10, 'italic');
+  } else {
+    d.set.forEach((ex, i) => {
+      const titel = ex.title ?? ex.titel ?? 'Übung';
+      const kat   = (typeof CATEGORY_NAMES !== 'undefined' && CATEGORY_NAMES[ex.kategorie])
+                    ? CATEGORY_NAMES[ex.kategorie] : (ex.kategorie ?? '');
+      absatz(`${String(i + 1).padStart(2, '0')}  ${titel}${kat ? `  (${kat})` : ''}`, 10, 'bold');
+      if (ex.anleitung) absatz(ex.anleitung, 9, 'normal', 8);
+      y += 2;
+    });
+  }
+
+  // ── Lieder ──
+  abschnitt('Lieder');
+  if (d.lieder.length === 0) {
+    absatz('Noch keine Lieder geplant.', 10, 'italic');
+  } else {
+    d.lieder.forEach((l, i) => {
+      absatz(`${String(i + 1).padStart(2, '0')}  ${l.titel}`, 10, 'bold');
+      if (l.notiz && l.notiz.trim()) absatz(l.notiz.trim(), 9, 'italic', 8);
+      if (l.pdf_pfad) absatz(`Noten: ${notenPublicUrl(l.pdf_pfad)}`, 8, 'normal', 8);
+      y += 2;
+    });
+  }
+
+  // ── Notizen zur Probe ──
+  if (d.allgemein) {
+    abschnitt('Notizen zur Probe');
+    absatz(d.allgemein, 10);
+  }
+
+  // ── Mitteilungen (immer mitgeschickt, Entscheid 2026-08-01) ──
+  if (d.mitteilung) {
+    abschnitt('Mitteilungen an den Chor');
+    absatz(d.mitteilung, 10);
+  }
+
+  return doc;
+}
+
+/** Erzeugt das PDF und übergibt es ans Teilen-Menü (Fallback: Download). */
+async function sendProbePDF() {
+  const btn = document.getElementById('btnProbePdf');
+
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert('Die PDF-Bibliothek wird noch geladen. Bitte einen Moment warten und erneut versuchen.');
+    return;
+  }
+
+  const datum = _einsingenNotizDatum || todayStr();
+
+  if (btn) { btn.classList.add('loading'); }
+  try {
+    const d = await collectProbeDaten(datum);
+    if (!d) { alert('Keine Verbindung zu Supabase.'); return; }
+
+    const pianist = _pianistenCache.find(p => p.id === _probePianistId) ?? null;
+    const name    = pianist ? `${pianist.vorname} ${pianist.nachname}` : '';
+
+    const doc      = buildProbePDF(d, name);
+    const dateiname = `Probe_${datum}.pdf`;
+    const blob     = doc.output('blob');
+    const file     = new File([blob], dateiname, { type: 'application/pdf' });
+
+    // Web Share API Level 2 — auf iOS Safari der direkte Weg in Mail/WhatsApp.
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: `Probe ${fmtDateDE(datum)}`,
+        text:  pianist
+          ? `Hallo ${pianist.vorname}, hier die Unterlagen zur Probe vom ${fmtDateDE(datum)}.`
+          : `Unterlagen zur Probe vom ${fmtDateDE(datum)}.`,
+      });
+    } else {
+      // Desktop und ältere Browser: herunterladen, Versand manuell.
+      doc.save(dateiname);
+      if (pianist) {
+        alert(`PDF heruntergeladen.\n\nE-Mail von ${pianist.vorname} ${pianist.nachname}: ${pianist.email}`);
+      }
+    }
+  } catch (err) {
+    // AbortError = Nutzer hat das Teilen-Menü geschlossen; das ist kein Fehler.
+    if (err && err.name === 'AbortError') return;
+    console.error('[Chorapp] Proben-PDF error:', err);
+    alert('Fehler beim Erzeugen des PDFs: ' + (err?.message ?? err));
+  } finally {
+    if (btn) btn.classList.remove('loading');
+  }
+}
+
+/** Speichert die Pianisten-Zuordnung für das aktuelle Probendatum. */
+async function savePianistZuordnung() {
+  const sel = document.getElementById('probePianistSelect');
+  if (!sel) return;
+
+  const sb = getSupabase();
+  const datum = _einsingenNotizDatum || todayStr();
+  if (!sb || !APP_STATE.chorId) return;
+
+  const pianistId = sel.value;
+  let error;
+
+  if (pianistId) {
+    // Primärschlüssel (chor_id, datum) → genau ein Pianist pro Probe.
+    ({ error } = await sb
+      .from('proben_pianist')
+      .upsert({ chor_id: APP_STATE.chorId, datum, pianist_id: pianistId },
+              { onConflict: 'chor_id,datum' }));
+  } else {
+    ({ error } = await sb
+      .from('proben_pianist')
+      .delete()
+      .eq('chor_id', APP_STATE.chorId)
+      .eq('datum', datum));
+  }
+
+  if (error) {
+    console.error('[Chorapp] Pianist-Zuordnung error:', error.message);
+    alert('Fehler beim Speichern der Zuordnung: ' + error.message);
+    sel.value = _probePianistId;   // auf letzten bekannten Stand zurück
+    return;
+  }
+  _probePianistId = pianistId;
 }
 
 // =============================================================================
