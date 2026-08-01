@@ -4067,6 +4067,26 @@
     <!-- ── Main (scrollable) ── -->
     <main class="main" id="main">
 
+      <!-- ════════════════════════════════════════════
+           NOTIZEN ZUR PROBE — AP-0301
+           Gekoppelt an dieselbe probennotizen-Zeile wie der Notiz-Tab
+           (datum = nächste geplante Probe). Steht bewusst zuoberst.
+      ════════════════════════════════════════════ -->
+      <div class="heute-section" id="einsingenNotizSection"
+           role="region" aria-label="Notizen zur Probe">
+        <div class="heute-section-header">
+          <span class="heute-section-title" id="einsingenNotizTitle">Notizen zur Probe</span>
+        </div>
+        <textarea class="notizen-textarea" id="einsingenNotizInhalt" rows="4"
+                  placeholder="Notizen zur nächsten Probe …"
+                  aria-label="Notizen zur nächsten Probe"></textarea>
+        <div class="notizen-editor-actions">
+          <button class="btn-save-notiz" id="btnSaveEinsingenNotiz"
+                  onclick="saveEinsingenNotiz()"
+                  aria-label="Notiz zur Probe speichern">Speichern</button>
+        </div>
+      </div>
+
       <!-- Empty state -->
       <div class="empty-state" id="emptyState">
         <div class="empty-icon" aria-hidden="true">🎵</div>
@@ -6773,6 +6793,9 @@ function openProbeByDatum(datum) {
 
 /** Fetches today's rehearsal of the active choir and renders the section. */
 async function loadHeuteAndRender() {
+  // AP-0301: keep the Einsingen note (next rehearsal) in sync with the song list.
+  loadEinsingenNotiz();
+
   const sb = getSupabase();
   const listEl  = document.getElementById('heuteList');
   const countEl = document.getElementById('heuteCount');
@@ -6845,6 +6868,119 @@ async function loadHeuteAndRender() {
 /** Opens the public Storage URL of a PDF in a new tab (FA-053). */
 function openNoten(pfad) {
   window.open(notenPublicUrl(pfad), '_blank', 'noopener');
+}
+
+// =============================================================================
+// Einsingen-Seite: Probennotiz für die nächste Probe — AP-0301
+// Nutzt DIESELBE probennotizen-Zeile wie der Notiz-Tab (datum = nächste Probe),
+// damit Notizen an einer Stelle zusammenlaufen. Kein zweites Speicherziel.
+// =============================================================================
+
+/** Datum (YYYY-MM-DD), an das das Einsingen-Notizfeld aktuell gekoppelt ist. */
+let _einsingenNotizDatum = null;
+
+/** Ermittelt das Datum der nächsten Probe (heute oder später), sonst null. */
+async function getNaechsteProbeDatum() {
+  const sb = getSupabase();
+  if (!sb || !APP_STATE.chorId) return null;
+  const { data, error } = await sb
+    .from('proben_lieder')
+    .select('datum')
+    .eq('chor_id', APP_STATE.chorId)
+    .gte('datum', todayStr())
+    .order('datum', { ascending: true })
+    .limit(1);
+  if (error) {
+    console.warn('[Chorapp] Nächste-Probe load error:', error.message);
+    return null;
+  }
+  return (data && data.length) ? data[0].datum : null;
+}
+
+/** Lädt die probennotizen-Zeile der nächsten Probe ins Einsingen-Notizfeld. */
+async function loadEinsingenNotiz() {
+  const inhaltEl = document.getElementById('einsingenNotizInhalt');
+  const titleEl  = document.getElementById('einsingenNotizTitle');
+  if (!inhaltEl) return;
+
+  const datum = (await getNaechsteProbeDatum()) || todayStr();
+  _einsingenNotizDatum = datum;
+
+  if (titleEl) {
+    titleEl.textContent = (datum === todayStr())
+      ? 'Notizen zur Probe · Heute'
+      : `Notizen zur Probe · ${formatNotizenDate(datum)}`;
+  }
+
+  const sb = getSupabase();
+  if (!sb || !APP_STATE.chorId) { inhaltEl.value = ''; return; }
+
+  const { data, error } = await sb
+    .from('probennotizen')
+    .select('inhalt')
+    .eq('chor_id', APP_STATE.chorId)
+    .eq('datum', datum)
+    .limit(1);
+
+  if (error) {
+    console.warn('[Chorapp] Einsingen-Notiz load error:', error.message);
+    return;
+  }
+  inhaltEl.value = (data && data.length) ? (data[0].inhalt ?? '') : '';
+}
+
+/**
+ * Speichert das Einsingen-Notizfeld in dieselbe probennotizen-Zeile (Upsert).
+ * Ein bestehendes `markiert`-Flag bleibt unangetastet.
+ */
+async function saveEinsingenNotiz() {
+  const inhaltEl = document.getElementById('einsingenNotizInhalt');
+  const btn      = document.getElementById('btnSaveEinsingenNotiz');
+  if (!inhaltEl) return;
+
+  const sb = getSupabase();
+  if (!sb || !APP_STATE.chorId) {
+    alert('Keine Verbindung zu Supabase — Notiz kann nicht gespeichert werden.');
+    return;
+  }
+
+  const datum  = _einsingenNotizDatum || todayStr();
+  const inhalt = inhaltEl.value.trim();
+
+  if (btn) { btn.classList.add('loading'); btn.textContent = '…'; }
+
+  // Existiert für dieses Datum schon eine Notiz? → update (markiert bleibt), sonst insert.
+  const { data: existing, error: selErr } = await sb
+    .from('probennotizen')
+    .select('id')
+    .eq('chor_id', APP_STATE.chorId)
+    .eq('datum', datum)
+    .limit(1);
+
+  let error;
+  if (!selErr && existing && existing.length) {
+    ({ error } = await sb
+      .from('probennotizen')
+      .update({ inhalt })
+      .eq('id', existing[0].id));
+  } else {
+    ({ error } = await sb
+      .from('probennotizen')
+      .insert({ chor_id: APP_STATE.chorId, datum, inhalt, markiert: false }));
+  }
+
+  if (btn) { btn.classList.remove('loading'); btn.textContent = 'Speichern'; }
+
+  if (error) {
+    console.error('[Chorapp] Einsingen-Notiz save error:', error.message);
+    alert('Fehler beim Speichern: ' + error.message);
+    return;
+  }
+
+  // Notiz-Tab-Liste aktualisieren, falls sie schon geladen wurde (gleiche Datenquelle).
+  if (typeof _notizenLoaded !== 'undefined' && _notizenLoaded) {
+    await loadNotizenAndRender();
+  }
 }
 
 // =============================================================================
