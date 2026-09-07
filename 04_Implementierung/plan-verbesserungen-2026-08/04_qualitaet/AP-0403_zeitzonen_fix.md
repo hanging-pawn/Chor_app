@@ -17,22 +17,27 @@ Alle «Heute»-Berechnungen nutzen Lokalzeit (Europe/Zurich) statt UTC. Schliess
 
 ## Abnahmekriterien
 
-- [ ] Kein `toISOString().split('T')[0]` mehr im Live-Code für «heute».
-- [ ] `todayStr()` liefert um 00:30 Lokalzeit das heutige Datum.
-- [ ] `bezahlt_am`-Anzeige (Tabelle + PDF) zeigt das lokale Datum.
-- [ ] `node --check` fehlerfrei, keine Regression in Kalender/Jahresplan (dort ist der `T12:00:00`-Trick bereits korrekt — nicht anfassen).
+- [x] Kein `toISOString().split('T')[0]` mehr im Live-Code für «heute». Per Grep verifiziert: von `toISOString` bleiben nur die beiden `bezahlt_am`-Inserts (Z. 6038/6045) übrig — die sind korrekt, siehe Abweichungen.
+- [x] `todayStr()` liefert um 00:30 Lokalzeit das heutige Datum. Mit gestellter Uhr in Node unter `TZ=Europe/Zurich` geprüft: 22:30 UTC → `2026-07-09` (Sommer, UTC+2) und 23:30 UTC → `2026-01-16` (Winter, UTC+1). Gegenprobe mit der alten Implementierung liefert jeweils den Vortag.
+- [x] `bezahlt_am`-Anzeige zeigt das lokale Datum — Beiträge-Tabelle (Z. 5966). **Einschränkung:** Im PDF kommt `bezahlt_am` gar nicht vor; das Kriterium war insofern zu weit gefasst. Das PDF zeigt `ausgaben.datum` (reine Datumsspalte, unverändert) sowie Zeitraum und Erstelldatum.
+- [x] `node --check` über das Inline-Script fehlerfrei. Keine Regression in Kalender/Jahresplan: der `T12:00:00`-Trick (Z. 6490) und der Datumsaufbau aus expliziten `year`/`month`/`day` (Z. 7914) sind unangetastet.
 
 ## Ausführungsumgebung & Modell
 
 **Umgebung**: Claude Code (Repo-Root) · **Modell**: klein–mittel · **Grösse**: S
 
-## Dokumentation (bei Ausführung auszufüllen)
+## Dokumentation
 
-- **Erledigt am**: {Datum}
-- **Abweichungen**: {keine / Beschreibung}
+- **Erledigt am**: 2026-09-07
+- **Abweichungen**:
+  - `bezahlt_am` wird weiterhin als voller ISO-Zeitstempel gespeichert (Z. 6038/6045). Die Spalte ist `timestamptz`; den exakten Zeitpunkt festzuhalten ist richtig, falsch war ausschliesslich die **Anzeige**. Der Fix sitzt deshalb in `fmtDateDE`, nicht beim Schreiben.
+  - Zusätzlich zur AP-Liste umgestellt: Z. 6249, PDF-Fussnote «Erstellt am» — lief über `fmtDateDE(new Date().toISOString())` und zeigte damit ebenfalls UTC.
+  - `fmtDateDE` formatiert die Zeitstempel-Variante von Hand als `TT.MM.JJJJ` statt über `toLocaleDateString('de-CH')` wie in Schritt 3 vorgeschlagen: de-CH liefert `7.9.2026` ohne führende Nullen und hätte die Darstellung gegenüber allen anderen Datumsfeldern inkonsistent gemacht.
+  - Reine `YYYY-MM-DD`-Strings laufen bewusst **nicht** durch `new Date()` — sie würden sonst als UTC-Mitternacht gelesen und in westlichen Zeitzonen auf den Vortag rutschen. Das ist derselbe Fehler nur andersherum.
+- **Prüfung**: 13 Zusicherungen in Node unter `TZ=Europe/Zurich` mit gestellter Uhr (Sommer-/Winterzeit, 00:30 und 23:59, führende Nullen, reines Datum vs. Zeitstempel, Postgres-Format mit Mikrosekunden und Offset, Leerwerte) — alle bestanden. Gegenprobe: die alte Implementierung fällt bei denselben Eingaben auf den Vortag.
 
 ## Status
 
 - [x] Bereit zur Ausführung
-- [ ] In Arbeit
-- [ ] Abgenommen
+- [x] In Arbeit
+- [x] Abgenommen

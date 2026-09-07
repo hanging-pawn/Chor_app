@@ -5762,7 +5762,7 @@ function exportMitgliederCSV() {
   const a    = document.createElement('a');
   const chorSlug = APP_STATE.chorName.replace(/\s+/g, '_').toLowerCase();
   a.href     = url;
-  a.download = `mitglieder_${chorSlug}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = `mitglieder_${chorSlug}_${todayStr()}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -5792,9 +5792,27 @@ function fmtCHF(n) {
 }
 
 /** Formats an ISO date (yyyy-mm-dd…) as dd.mm.yyyy; '' for empty input. */
+/**
+ * Formats a date as DD.MM.YYYY.
+ * Plain dates (YYYY-MM-DD) are split as text: they carry no time zone and must
+ * NOT go through new Date(), which would read them as UTC midnight and shift
+ * them to the previous day west of Greenwich.
+ * Full timestamps (timestamptz, e.g. beitraege.bezahlt_am) are converted to
+ * local time instead — a payment booked at 00:30 must not show up as the day
+ * before (AP-0403).
+ */
 function fmtDateDE(iso) {
   if (!iso) return '';
-  const [y, m, d] = iso.slice(0, 10).split('-');
+  const s = String(iso);
+  if (s.length > 10 || s.includes('T')) {
+    const dt = new Date(s);
+    if (!Number.isNaN(dt.getTime())) {
+      const p = n => String(n).padStart(2, '0');
+      return `${p(dt.getDate())}.${p(dt.getMonth() + 1)}.${dt.getFullYear()}`;
+    }
+    // Unparsable: fall through to plain text splitting.
+  }
+  const [y, m, d] = s.slice(0, 10).split('-');
   return `${d}.${m}.${y}`;
 }
 
@@ -6048,7 +6066,7 @@ async function initBuchhaltungIfNeeded() {
   if (!_buchhaltungLoaded) {
     _buchhaltungLoaded = true;
     // Sensible default statement range: current calendar year to today.
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayStr();
     const jan1  = today.slice(0, 4) + '-01-01';
     const vonEl = document.getElementById('bhVon');
     const bisEl = document.getElementById('bhBis');
@@ -6228,7 +6246,7 @@ async function generateAbrechnungPDF() {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
   doc.text(`Chor: ${APP_STATE.chorName}`, left, y); y += 6;
   doc.text(`Zeitraum: ${fmtDateDE(von)} – ${fmtDateDE(bis)}`, left, y); y += 6;
-  doc.text(`Erstellt am: ${fmtDateDE(new Date().toISOString())}`, left, y); y += 11;
+  doc.text(`Erstellt am: ${fmtDateDE(todayStr())}`, left, y); y += 11;
 
   // ── Einnahmen ───────────────────────────────────────────────────────────────
   doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
@@ -6328,7 +6346,7 @@ let _notizenLoaded   = false;
 async function initNotizenIfNeeded() {
   // Pre-fill date with today on first open
   if (!_notizenLoaded) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayStr();
     document.getElementById('notizenDatum').value = today;
     _notizenLoaded = true;
   }
@@ -6445,7 +6463,7 @@ async function saveNotiz() {
 /** Resets the editor to a blank new note (today's date). */
 function newNotizenEditor() {
   _notizenEditingId = null;
-  document.getElementById('notizenDatum').value  = new Date().toISOString().split('T')[0];
+  document.getElementById('notizenDatum').value  = todayStr();
   document.getElementById('notizenInhalt').value = '';
   setNotizTyp('allgemein');
 
@@ -6579,9 +6597,16 @@ let _liedPdfFile   = null;
 /** True once the Repertoire tab has been initialised. */
 let _repLoaded     = false;
 
-/** Returns today's date as YYYY-MM-DD (local-naive, consistent with Notizen). */
+/**
+ * Returns today's date as YYYY-MM-DD in LOCAL time.
+ * Deliberately not toISOString(): that yields UTC, so between midnight and
+ * 02:00 CEST it returns yesterday — which would break the "next rehearsal"
+ * query, the Heute badge and every pre-filled date field (AP-0403, finding 4).
+ */
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
 /** Builds the public URL for a stored PDF (bucket has public read). */
