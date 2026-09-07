@@ -43,7 +43,8 @@ active: true
 
 ## Code-Review-Fixes 2026-08 (04_qualitaet, Review 2026-08-15)
 
-- [x] Kritisch: Migration 013 Owner-RLS pianisten/proben_set + XSS-Fix renderCard (vorbereitet, Ausführung Supabase + Push manuell) `2sp`
+- [x] Kritisch: Migration 013 Owner-RLS pianisten/proben_set + XSS-Fix renderCard (Migration am 2026-09-07 in Supabase ausgeführt und verifiziert; XSS-Fix committet und ausgeliefert) `2sp`
+- [x] Signups deaktiviert (AP-0402 Schritt 6, Supabase Auth, 2026-09-07) `0sp`
 - [ ] AP-0402: send-email absichern (Empfänger-Validierung, Rate-Limit, CORS) `3sp`
 - [ ] AP-0403: Zeitzonenfix todayStr/bezahlt_am `1sp`
 - [ ] AP-0404: Toter Code konsolidieren, FA-004 live, Tests in CI `5sp`
