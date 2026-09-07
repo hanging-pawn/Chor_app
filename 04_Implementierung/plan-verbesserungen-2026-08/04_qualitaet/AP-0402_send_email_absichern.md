@@ -19,10 +19,11 @@ Die E-Mail-Funktion versendet nur noch an bekannte Empfänger des eigenen Chors,
 
 ## Abnahmekriterien
 
-- [ ] Versand an eine Adresse, die weder in `mitglieder` noch `pianisten` des Aufrufers steht → 400.
-- [ ] Rate-Limit greift (429) und ist im Code dokumentiert.
-- [ ] CORS-Header enthält nur noch die Pages-Origin.
-- [ ] `deno check` (bzw. Syntaxprüfung) fehlerfrei; bestehender Versand an Mitglieder funktioniert unverändert.
+- [x] CORS-Header enthält nur noch die Pages-Origin (`ALLOWED_ORIGINS`, im Code verifizierbar).
+- [x] Syntax-/Typprüfung fehlerfrei — `tsc --strict --noEmit` gegen Ambient-Deklarationen für die Deno- und Supabase-Imports, Exit 0. **Nicht** `deno check`: Deno ist auf dem Rechner nicht installiert.
+- [x] Bestehender Versand an Mitglieder funktioniert unverändert — Aufrufvertrag geprüft: alle vier Aufrufer in `index.html` (Rundmail, Einzel- und Sammel-Zahlungserinnerung, Probeninfo) senden `chor_id: APP_STATE.chorId`, und `_mitgliederCache` wird mit `.eq('chor_id', APP_STATE.chorId)` geladen. Antwortformat `{sent, failed}` und Fehlerfeld `error` unverändert.
+- [ ] Versand an eine Adresse, die weder in `mitglieder` noch `pianisten` des Aufrufers steht → 400. **Nicht getestet** — Function ist nicht deployed (404), Laufzeittest erst nach Deploy möglich.
+- [ ] Rate-Limit greift (429). Implementiert und dokumentiert, Laufzeittest steht wie oben aus.
 
 ## Voraussetzungen
 
@@ -32,14 +33,23 @@ Keine (unabhängig von AP-0403 ff.). Deploy der Function: `supabase functions de
 
 **Umgebung**: Claude Code (Repo-Root) · **Modell**: mittel · **Grösse**: M
 
-## Dokumentation (bei Ausführung auszufüllen)
+## Dokumentation
 
-- **Erledigt am**: {Datum}
-- **Abweichungen**: {keine / Beschreibung}
-- **Verbleibende offene Punkte**: {keine / Verweis}
+- **Erledigt am**: 2026-09-07 (Code); Deploy und Laufzeitabnahme stehen aus
+- **Abweichungen**:
+  - Umsetzungsschritt 6 (Signups deaktivieren) wurde vorgezogen und bereits am 2026-09-07 im Supabase-Dashboard ausgeführt.
+  - Zusätzlich zur Spezifikation: `chor_id` wird gegen `choere` des Aufrufers geprüft (403 bei fremdem Chor), und die Adressvalidierung nutzt eine bewusst strenge Regex ohne `,` `;` `<` `>`, damit eine Adresse keinen zweiten Empfänger schmuggeln kann.
+  - Empfänger- und Quota-Abfragen laufen über den anon-Key-Client, nicht über service_role. Damit erzwingt Postgres per RLS, dass die Function fremde Mitglieder gar nicht lesen kann — die Prüfung hängt nicht allein an der Filterlogik im Code. Möglich wurde das erst durch Migration 013.
+  - Der Rate-Limit-Check schlägt bei Fehler fehl (fail closed, 500) statt durchzulassen.
+  - Grenzwerte: 20 Sendungen und 500 Empfänger je 24 h und Benutzerin, 100 Empfänger je Request (entspricht dem Resend-Batch-Limit).
+- **Verbleibende offene Punkte**:
+  - Deploy blockiert durch **OP-EMAIL-01**: ohne festgelegte Absenderadresse mit DKIM/SPF lässt sich `SENDER_EMAIL` nicht setzen.
+  - Nach dem Deploy: Negativtest (fremde Adresse → 400) und Rate-Limit-Test (429) nachholen.
+  - Bei einem Chor mit mehr als 100 Mitgliedern greift `MAX_RECIPIENTS_PER_REQUEST` und der Versand bricht mit 400 ab. Für Anjas Chorgrösse unkritisch; sonst müsste die Function wieder in Chunks senden.
+  - Lokale Entwicklung gegen die Function ist durch die CORS-Einschränkung nicht mehr möglich — dafür müsste die Origin in `ALLOWED_ORIGINS` ergänzt werden.
 
 ## Status
 
 - [x] Bereit zur Ausführung
-- [ ] In Arbeit
-- [ ] Abgenommen
+- [x] In Arbeit
+- [ ] Abgenommen (blockiert durch OP-EMAIL-01 / Deploy)
