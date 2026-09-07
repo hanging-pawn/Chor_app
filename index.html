@@ -8273,12 +8273,123 @@ Herzliche Grüsse,
 ${chorName}`;
 }
 
+// ── Versandweg — OP-EMAIL-01 ──────────────────────────────────────────────────
+// 'server': Versand über die Edge Function send-email (Resend).
+// 'mailto': öffnet das Mailprogramm der Chorleiterin mit fertig vorbereiteter
+//           Mail. Übergangslösung, solange keine verifizierte Absenderdomain
+//           existiert — von einer @hotmail.com-Adresse kann Resend nicht senden
+//           (kein DNS-Zugriff für DKIM; SPF von hotmail.com endet auf -all).
+// Auf 'server' umstellen, sobald SENDER_EMAIL und RESEND_API_KEY gesetzt sind.
+// Details: 08_Meetings/2026-09-07_OP-EMAIL-01_Absenderadresse.md
+const MAIL_VERSAND_MODUS = 'mailto';
+
+// Konservative Obergrenze für die Länge einer mailto:-URL. Betriebssysteme und
+// Mailprogramme kürzen darüber hinaus stillschweigend — lieber vorher warnen,
+// als eine halbe Empfängerliste zu verschicken.
+const MAILTO_MAX_LAENGE = 1800;
+
+/**
+ * Baut eine mailto:-URL. Mehrere Empfänger landen im BCC, damit die Mitglieder
+ * die Adressen der anderen nicht sehen (NF-013).
+ * @param {{to:string[], subject:string, body:string}} payload
+ * @returns {string}
+ */
+function buildMailtoUrl({ to, subject, body }) {
+  const enc = encodeURIComponent;
+  // Adressen: das @ bleibt literal — nicht jedes Mailprogramm dekodiert %40 im
+  // Adressteil zuverlässig. Die Kommas zwischen den Adressen müssen ebenfalls
+  // literal bleiben, deshalb wird jede Adresse einzeln kodiert und erst danach
+  // zusammengefügt.
+  const encAdr = a => enc(a).replace(/%40/g, '@');
+  const empfaenger = to.map(a => String(a).trim()).filter(Boolean);
+  const liste = empfaenger.map(encAdr).join(',');
+  const kopf  = empfaenger.length === 1 ? `mailto:${liste}` : 'mailto:';
+  const teile = [];
+  if (empfaenger.length > 1) teile.push(`bcc=${liste}`);
+  teile.push(`subject=${enc(subject ?? '')}`);
+  teile.push(`body=${enc(body ?? '')}`);
+  return `${kopf}?${teile.join('&')}`;
+}
+
+/**
+ * Übergangsweg: öffnet die vorbereitete Mail im Mailprogramm.
+ * Der Browser erfährt nicht, ob tatsächlich gesendet wurde — deshalb wird
+ * nachgefragt, und nur eine bestätigte Sendung landet im Protokoll (FA-104).
+ * @param {{to:string[], subject:string, body:string, chor_id:string, typ:string}} payload
+ * @returns {Promise<{sent:number, failed:number, abgebrochen:boolean}>}
+ */
+async function sendViaMailto(payload) {
+  const empfaenger = payload.to.map(a => String(a).trim()).filter(Boolean);
+  if (empfaenger.length === 0) throw new Error('Keine Empfängeradressen vorhanden.');
+
+  const url = buildMailtoUrl(payload);
+  if (url.length > MAILTO_MAX_LAENGE) {
+    const weiter = confirm(
+      `Die E-Mail ist mit ${empfaenger.length} Empfängern sehr lang.\n\n` +
+      'Manche Mailprogramme kürzen sie dann stillschweigend. Bitte im ' +
+      'geöffneten Entwurf prüfen, ob Empfänger und Text vollständig sind.\n\n' +
+      'Trotzdem öffnen?'
+    );
+    if (!weiter) return { sent: 0, failed: 0, abgebrochen: true };
+  }
+
+  // Ein Anker ist zuverlässiger als window.location, gerade in der installierten
+  // PWA auf iOS.
+  const a = document.createElement('a');
+  a.href = url;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  // Kurz warten, damit das Mailprogramm nach vorne kommt, bevor die Rückfrage
+  // erscheint — sonst beantwortet man sie, ohne den Entwurf gesehen zu haben.
+  await new Promise(r => setTimeout(r, 900));
+
+  const bestaetigt = confirm(
+    'Wurde die E-Mail im Mailprogramm tatsächlich versendet?\n\n' +
+    'Nur dann wird sie im Versandprotokoll vermerkt.'
+  );
+  if (!bestaetigt) return { sent: 0, failed: 0, abgebrochen: true };
+
+  // Protokolleintrag (FA-104) — nur Metadaten, kein Inhalt.
+  try {
+    const sb = getSupabase();
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      const { error } = await sb.from('email_versand').insert({
+        user_id:           session.user.id,
+        chor_id:           payload.chor_id,
+        empfaenger_anzahl: empfaenger.length,
+        betreff:           String(payload.subject ?? '').slice(0, 255),
+        typ:               payload.typ,
+      });
+      if (error) console.error('[Chorapp] Versandprotokoll:', error.message);
+    }
+  } catch (err) {
+    // Ein fehlender Protokolleintrag darf den Ablauf nicht abbrechen.
+    console.error('[Chorapp] Versandprotokoll:', err);
+  }
+
+  return { sent: empfaenger.length, failed: 0, abgebrochen: false };
+}
+
+/**
+ * Versendet über den konfigurierten Weg (siehe MAIL_VERSAND_MODUS).
+ * @param {{to:string[], subject:string, body:string, chor_id:string, typ:string}} payload
+ * @returns {Promise<{sent:number, failed:number, abgebrochen?:boolean}>}
+ */
+async function callSendEmail(payload) {
+  if (MAIL_VERSAND_MODUS === 'mailto') return sendViaMailto(payload);
+  return sendViaServer(payload);
+}
+
 /**
  * Calls the send-email Edge Function.
  * @param {{to:string[], subject:string, body:string, chor_id:string, typ:string}} payload
  * @returns {Promise<{sent:number, failed:number}>}
  */
-async function callSendEmail(payload) {
+async function sendViaServer(payload) {
   const sb = getSupabase();
   if (!sb) throw new Error('Supabase nicht verfügbar.');
 
@@ -8357,6 +8468,12 @@ async function submitRundmail() {
       chor_id: APP_STATE.chorId,
       typ:     'rundmail',
     });
+    // Beim mailto-Weg bedeutet ein Abbruch: nichts gesendet, nichts protokolliert.
+    if (result.abgebrochen) {
+      btn.disabled    = false;
+      btn.textContent = 'Senden';
+      return;
+    }
     document.getElementById('rundmailModal').classList.add('hidden');
     document.body.style.overflow = '';
     const msg = result.failed
@@ -8443,13 +8560,17 @@ async function sendZahlErinnerung(mitgliedId, nr) {
   if (btn) { btn.disabled = true; btn.textContent = 'Sendet …'; }
 
   try {
-    await callSendEmail({
+    const result = await callSendEmail({
       to:      [member.email],
       subject: 'Zahlungserinnerung Mitgliederbeitrag',
       body:    vorlage,
       chor_id: APP_STATE.chorId,
       typ:     'zahlungserinnerung',
     });
+    if (result.abgebrochen) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Erinnerung senden'; }
+      return;
+    }
     if (btn) btn.textContent = '✓ Gesendet';
   } catch (err) {
     console.error('[Chorapp] Zahlungserinnerung error:', err.message);
@@ -8486,6 +8607,11 @@ async function sendAlleErinnerungen() {
       chor_id: APP_STATE.chorId,
       typ:     'zahlungserinnerung',
     });
+    if (result.abgebrochen) {
+      btn.disabled    = false;
+      btn.textContent = 'Alle erinnern';
+      return;
+    }
     closeZahlErinnerungModal();
     const msg = result.failed
       ? `✓ ${result.sent} gesendet, ${result.failed} fehlgeschlagen.`
@@ -8535,6 +8661,10 @@ async function sendProbeninfo(noteId) {
       chor_id: APP_STATE.chorId,
       typ:     'probeninfo',
     });
+    if (result.abgebrochen) {
+      if (btn) { btn.disabled = false; btn.textContent = '✉ Per E-Mail senden'; }
+      return;
+    }
     if (btn) btn.textContent = '✓ Gesendet';
     if (result.failed) alert(`${result.failed} Zustellungen fehlgeschlagen.`);
   } catch (err) {

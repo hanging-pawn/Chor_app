@@ -39,7 +39,8 @@ active: true
 - [x] Phase 7-V2: Buchhaltung + anonymisierter PDF-Export `5sp`
 - [x] Phase 8-V2: E-Mail-Versand (Rundmail, Zahlungserinnerung, Probeninfo) `3sp`
 - [ ] Phase 9-V2: Audio-Übungen `3sp`
-- [ ] OP-EMAIL-01 schriftlich bestätigen (Absenderadresse/Dienst, DKIM/SPF) `1sp`
+- [ ] OP-EMAIL-01 schriftlich bestätigen (Absenderadresse/Dienst, DKIM/SPF) — analysiert und dokumentiert 2026-09-07 (`08_Meetings/2026-09-07_OP-EMAIL-01_Absenderadresse.md`); offen ist nur noch die Wahl der Absenderdomain `1sp`
+- [x] Übergangslösung E-Mail-Versand per `mailto:` (BCC, Protokoll nur nach Bestätigung) `2sp`
 
 ## Code-Review-Fixes 2026-08 (04_qualitaet, Review 2026-08-15)
 
@@ -85,7 +86,8 @@ Workflow vorhanden: `.github/workflows/deploy.yml`.
 
 ## Meetings
 
-<!-- Ordner: 08_Meetings — leer. Kein Protokoll zum Nutzungstest (AK-005) oder zu OP-EMAIL-01 vorhanden. -->
+Protokolle vorhanden zu FA-021 (Notenbild), Abnahme AK-001–005 und OP-EMAIL-01 (2026-09-07).
+Kein Protokoll zum Nutzungstest mit Anja (AK-005).
 
 ## Referenzen
 

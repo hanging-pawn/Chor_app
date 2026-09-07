@@ -41,6 +41,7 @@ Keine (unabhängig von AP-0403 ff.). Deploy der Function: `supabase functions de
   - Zusätzlich zur Spezifikation: `chor_id` wird gegen `choere` des Aufrufers geprüft (403 bei fremdem Chor), und die Adressvalidierung nutzt eine bewusst strenge Regex ohne `,` `;` `<` `>`, damit eine Adresse keinen zweiten Empfänger schmuggeln kann.
   - Empfänger- und Quota-Abfragen laufen über den anon-Key-Client, nicht über service_role. Damit erzwingt Postgres per RLS, dass die Function fremde Mitglieder gar nicht lesen kann — die Prüfung hängt nicht allein an der Filterlogik im Code. Möglich wurde das erst durch Migration 013.
   - Der Rate-Limit-Check schlägt bei Fehler fehl (fail closed, 500) statt durchzulassen.
+  - Nachgereicht 2026-09-07: optionales Secret `REPLY_TO_EMAIL` setzt `reply_to` auf jeder Nachricht, damit Antworten in Anjas eigenem Postfach landen, während der Versand über eine kontrollierte Domain läuft (OP-EMAIL-01). Ein ungültiger Wert wird verworfen und geloggt, statt jeden Versand zu brechen.
   - Grenzwerte: 20 Sendungen und 500 Empfänger je 24 h und Benutzerin, 100 Empfänger je Request (entspricht dem Resend-Batch-Limit).
 - **Verbleibende offene Punkte**:
   - Deploy blockiert durch **OP-EMAIL-01**: ohne festgelegte Absenderadresse mit DKIM/SPF lässt sich `SENDER_EMAIL` nicht setzen.

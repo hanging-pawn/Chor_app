@@ -16,6 +16,13 @@
  * Required Supabase Secrets (Dashboard → Edge Functions → Secrets):
  *   RESEND_API_KEY   — API key from resend.com
  *   SENDER_EMAIL     — verified sender address (see OP-EMAIL-01)
+ * Optional:
+ *   REPLY_TO_EMAIL   — where replies should land, e.g. the choir director's
+ *                      own mailbox.  Sending must happen from a domain we
+ *                      control (DKIM), but replies should still reach her
+ *                      personal inbox, so the two addresses differ by design.
+ *                      Kept as a secret so a private address stays out of the
+ *                      public repository.  Ignored if unset or malformed.
  * SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are injected
  * by the platform.
  *
@@ -109,6 +116,7 @@ serve(async (req: Request): Promise<Response> => {
 
   const RESEND_API_KEY   = Deno.env.get('RESEND_API_KEY')
   const SENDER_EMAIL     = Deno.env.get('SENDER_EMAIL')
+  const REPLY_TO_EMAIL   = Deno.env.get('REPLY_TO_EMAIL')
   const SUPABASE_URL     = Deno.env.get('SUPABASE_URL')
   const ANON_KEY         = Deno.env.get('SUPABASE_ANON_KEY')
   const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -264,11 +272,22 @@ serve(async (req: Request): Promise<Response> => {
   // Each recipient gets an individual message (BCC-free; privacy preserved).
   // requested.length is capped at MAX_RECIPIENTS_PER_REQUEST, which equals the
   // Resend batch limit, so a single request is always enough.
+  // Optional Reply-To: a malformed value is dropped rather than passed on, so a
+  // typo in the secret cannot break every send.
+  const replyTo = REPLY_TO_EMAIL ? REPLY_TO_EMAIL.trim() : ''
+  if (replyTo !== '' && !EMAIL_RE.test(replyTo.toLowerCase())) {
+    console.error('[send-email] REPLY_TO_EMAIL is not a valid address; ignoring it.')
+  }
+  const replyToField = (replyTo !== '' && EMAIL_RE.test(replyTo.toLowerCase()))
+    ? { reply_to: replyTo }
+    : {}
+
   const messages = requested.map(email => ({
     from:    SENDER_EMAIL,
     to:      [email],
     subject: cleanSubject,
     text:    cleanBody,
+    ...replyToField,
   }))
 
   let sent   = 0

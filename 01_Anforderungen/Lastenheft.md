@@ -473,5 +473,5 @@ Privates Projekt, kein externes Budget (Eigenleistung).
 | OP-F5-01 | Datenschutz Mitgliederdaten: Login und Zugriffskontrolle | FA-080, NF-013, NF-014 | ✅ Geklärt: **Supabase Auth** (E-Mail + Passwort) + RLS. Entschieden 2026-06-12. |
 | OP-F5-02 | Soll die Mitgliederliste exportierbar sein (z. B. als CSV/Excel)? | FA-081 | 🔲 Offen |
 | OP-F5-03 | Welches Steuerformat gilt für die Abrechnung? | FA-095, FA-097 | ⚠️ Teilgeklärt: Pflichtfelder definiert (FA-095). Ob eine behördliche CH-Vorlage eingehalten werden muss, noch offen. |
-| OP-EMAIL-01 | Welcher E-Mail-Dienst für den Versand? Von welcher Absenderadresse sollen E-Mails kommen (App-Adresse oder Anjas eigene)? | FA-100–104 | 🔲 Offen — technische Entscheidung vor Implementierung |
+| OP-EMAIL-01 | Welcher E-Mail-Dienst für den Versand? Von welcher Absenderadresse sollen E-Mails kommen (App-Adresse oder Anjas eigene)? | FA-100–104 | ⚠️ Teilgeklärt 2026-09-07: **Resend** bleibt. Anjas Hotmail-Adresse ist als Absender technisch ausgeschlossen (keine DNS-Hoheit für DKIM; SPF von hotmail.com endet auf `-all`). Offen ist nur noch die Absenderdomain. Übergangsweise Versand per `mailto:`. Siehe `08_Meetings/2026-09-07_OP-EMAIL-01_Absenderadresse.md` |
 | OP-ALL-01 | Finale Priorisierung und Reihenfolge der Teilfunktionen nach v1.0-Abnahme | Alle | 🔲 Offen |
