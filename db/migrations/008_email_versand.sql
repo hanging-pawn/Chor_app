@@ -28,9 +28,16 @@ CREATE INDEX IF NOT EXISTS email_versand_chor_datum_idx
 ALTER TABLE public.email_versand ENABLE ROW LEVEL SECURITY;
 
 -- Authenticated user may only see / write rows that belong to her own account.
+-- DROP vor CREATE, damit die Migration mehrfach ausführbar ist (AP-0406,
+-- Befund 14): CREATE POLICY kennt kein IF NOT EXISTS und brach beim zweiten
+-- Lauf mit "policy already exists" ab. Die Migration wurde bereits ausgeführt;
+-- die Ergänzung hier stellt nur die Wiederholbarkeit her und ändert nichts am
+-- Ergebnis.
+DROP POLICY IF EXISTS "owner_select" ON public.email_versand;
 CREATE POLICY "owner_select" ON public.email_versand
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "owner_insert" ON public.email_versand;
 CREATE POLICY "owner_insert" ON public.email_versand
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 

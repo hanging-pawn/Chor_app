@@ -50,12 +50,12 @@ active: true
 - [x] AP-0403: Zeitzonenfix todayStr/bezahlt_am (2026-09-07, mit Zeitzonentests) `1sp`
 - [ ] AP-0404: Toter Code konsolidieren, FA-004 live, Tests in CI `5sp`
 - [x] AP-0405: Datenzugriffe robust (Upsert, Race, Fehlerbehandlung, N+1) — 2026-09-07, mit Verhaltenstests `3sp`
-- [ ] AP-0406: PWA & Deploy härten (Service Worker, CSP, Deploy-Scope) `5sp`
+- [x] AP-0406: PWA & Deploy härten (Service Worker, CSP, Deploy-Scope) — 2026-09-07; Migration 014 noch einspielen `5sp`
 
 ## Implementierung (übergreifend)
 
 - [x] Core-Features implementiert `8sp`
-- [ ] Offline-Fähigkeit (PWA Service Worker) `5sp`
+- [x] Offline-Fähigkeit (PWA Service Worker) — `sw.js`, offline im Browser verifiziert; Flugmodus-Test auf dem iPhone steht aus `5sp`
 - [x] Supabase-Integration `5sp`
 
 ## Launch

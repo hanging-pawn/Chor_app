@@ -2,6 +2,26 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <!--
+    Content-Security-Policy (AP-0406, Befund 13) — zweite Verteidigungslinie
+    hinter escHtml.
+
+    Eingestandener Kompromiss: 'unsafe-inline' für script-src und style-src ist
+    unvermeidbar, solange die gesamte App als Inline-Script im HTML liegt und die
+    Oberfläche mit onclick-Attributen arbeitet. Injizierte Inline-Skripte fängt
+    diese CSP daher NICHT ab. Was sie sehr wohl verhindert: das Nachladen von
+    Code aus fremden Quellen, Datenabfluss an fremde Endpunkte, das Einbetten
+    fremder Objekte und Manipulation der Basis-URL. Eine echte Nonce-CSP ist
+    erst nach dem Modul-Schnitt aus AP-0404 möglich.
+
+    frame-ancestors fehlt bewusst: die Direktive wird in einem <meta>-Element
+    ignoriert und bräuchte einen HTTP-Header, den GitHub Pages nicht anbietet.
+
+    fonts.googleapis.com steht in style-src, fonts.gstatic.com in font-src: die
+    Schrift DM Sans wird per @import aus dem <style>-Block geladen, der Import
+    zieht die Schriftdateien dann von gstatic nach.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://guxvlbrxzmgylojbxjew.supabase.co https://cdn.jsdelivr.net; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -4536,14 +4556,26 @@ async function initChoere() {
 
     if (error) throw error;
 
-    // Seed default choir when table is empty
+    // Seed default choir when table is empty.
+    // Der Unique-Index aus Migration 014 verhindert, dass zwei parallele
+    // Aufrufe (etwa zwei geöffnete Tabs) beide einen «Mein Chor» anlegen.
+    // Verliert dieser Aufruf das Rennen, ist das kein Fehler — dann liest er
+    // einfach den Chor, den der andere gerade erzeugt hat.
     if (!choere || choere.length === 0) {
       const { data: seeded, error: seedErr } = await sb
         .from('choere')
         .insert({ name: 'Mein Chor' })
         .select('id, name');
-      if (seedErr) throw seedErr;
-      choere = seeded ?? [];
+      if (seedErr) {
+        const { data: nochmal, error: reErr } = await sb
+          .from('choere')
+          .select('id, name')
+          .order('erstellt_am', { ascending: true });
+        if (reErr || !nochmal || nochmal.length === 0) throw seedErr;
+        choere = nochmal;
+      } else {
+        choere = seeded ?? [];
+      }
     }
 
     // Activate first choir
@@ -6064,25 +6096,32 @@ async function toggleBeitrag(mitgliedId) {
       alert('Bitte zuerst eine Beitragshöhe eingeben (Feld oben).');
       return;
     }
-    const { error } = await sb.from('beitraege').insert({
+    const { data, error } = await sb.from('beitraege').insert({
       chor_id:     APP_STATE.chorId,
       mitglied_id: mitgliedId,
       halbjahr:    _beitHalbjahr,
       betrag,
       bezahlt:     true,
       bezahlt_am:  new Date().toISOString(),
-    });
+    }).select().single();
     if (error) { console.error('toggleBeitrag insert error:', error.message); alert('Fehler: ' + error.message); return; }
+    _beitCache[mitgliedId] = data;
   } else {
     const newPaid = !row.bezahlt;
-    const { error } = await sb.from('beitraege').update({
+    const { data, error } = await sb.from('beitraege').update({
       bezahlt:    newPaid,
       bezahlt_am: newPaid ? new Date().toISOString() : null,
-    }).eq('id', row.id);
+    }).eq('id', row.id).select().single();
     if (error) { console.error('toggleBeitrag update error:', error.message); alert('Fehler: ' + error.message); return; }
+    _beitCache[mitgliedId] = data;
   }
 
-  await loadBeitraegeAndRender();
+  // Nur die betroffene Zeile im Cache nachziehen und lokal neu zeichnen.
+  // Vorher holte jeder einzelne Klick die komplette Beitragsliste erneut vom
+  // Server — bei 40 Mitgliedern spürbar, und über eine Mobilverbindung träge.
+  // Die geschriebene Zeile kommt per .select().single() direkt zurück, der
+  // Cache bleibt also mit dem Server im Gleichstand (AP-0406, Niedrig-Befund).
+  renderBeitTable();
 }
 
 // =============================================================================
@@ -8843,6 +8882,20 @@ loadHeuteAndRender();
 <script async
         src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
         onerror="console.warn('[Chorapp] jsPDF CDN unavailable — PDF export disabled')"></script>
+
+<script>
+  // Service Worker (AP-0406, Befund 11) — macht das Einsingen offline nutzbar.
+  // Feature-detected und bewusst nicht blockierend: schlägt die Registrierung
+  // fehl (kein sicherer Kontext, Browser ohne Unterstützung, Nutzerin hat
+  // Speicher gesperrt), läuft die App unverändert online weiter.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => {
+        console.warn('[Chorapp] Service Worker nicht registriert:', err.message);
+      });
+    });
+  }
+</script>
 
 </body>
 </html>
