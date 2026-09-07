@@ -41,6 +41,15 @@ active: true
 - [ ] Phase 9-V2: Audio-Übungen `3sp`
 - [ ] OP-EMAIL-01 schriftlich bestätigen (Absenderadresse/Dienst, DKIM/SPF) `1sp`
 
+## Code-Review-Fixes 2026-08 (04_qualitaet, Review 2026-08-15)
+
+- [x] Kritisch: Migration 013 Owner-RLS pianisten/proben_set + XSS-Fix renderCard (vorbereitet, Ausführung Supabase + Push manuell) `2sp`
+- [ ] AP-0402: send-email absichern (Empfänger-Validierung, Rate-Limit, CORS) `3sp`
+- [ ] AP-0403: Zeitzonenfix todayStr/bezahlt_am `1sp`
+- [ ] AP-0404: Toter Code konsolidieren, FA-004 live, Tests in CI `5sp`
+- [ ] AP-0405: Datenzugriffe robust (Upsert, Race, Fehlerbehandlung, N+1) `3sp`
+- [ ] AP-0406: PWA & Deploy härten (Service Worker, CSP, Deploy-Scope) `5sp`
+
 ## Implementierung (übergreifend)
 
 - [x] Core-Features implementiert `8sp`
