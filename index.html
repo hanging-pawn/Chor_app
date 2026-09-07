@@ -3806,6 +3806,7 @@
                    aria-label="Beitragshöhe pro Halbjahr">
           </div>
           <button class="btn-beit-toggle" type="button"
+                  id="btnBeitragAnwenden"
                   onclick="applyBeitragshoehe()"
                   aria-label="Beitragshöhe für alle Mitglieder dieser Periode übernehmen">
             Für alle übernehmen
@@ -5426,14 +5427,16 @@ async function initMitgliederIfNeeded() {
 /** Fetches all members for the active choir, sorted by nachname then vorname. */
 async function loadMitgliederAndRender() {
   if (!APP_STATE.chorId) return;
+  const cid = APP_STATE.chorId;
   const sb = getSupabase();
   const { data, error } = await sb
     .from('mitglieder')
     .select('*')
-    .eq('chor_id', APP_STATE.chorId)
+    .eq('chor_id', cid)
     .order('nachname', { ascending: true })
     .order('vorname',  { ascending: true });
 
+  if (chorVeraltet(cid)) return;
   if (error) {
     console.error('loadMitglieder error:', error.message);
     return;
@@ -5791,6 +5794,18 @@ function fmtCHF(n) {
   return 'CHF ' + Number(n || 0).toFixed(2);
 }
 
+/**
+ * Guard against choir-switch races (AP-0405, finding 8).
+ * Every choir-scoped loader captures the active choir id before its first
+ * await and calls this after each one. Without it a slow response for the
+ * previously selected choir can land after the new choir's response and
+ * overwrite its caches and view — the user then sees the wrong choir's data
+ * with the new choir still selected.
+ */
+function chorVeraltet(cid) {
+  return cid !== APP_STATE.chorId;
+}
+
 /** Formats an ISO date (yyyy-mm-dd…) as dd.mm.yyyy; '' for empty input. */
 /**
  * Formats a date as DD.MM.YYYY.
@@ -5917,9 +5932,11 @@ function onBeitHalbjahrChange() {
 /** Loads beitraege rows for the active choir + selected period, then renders. */
 async function loadBeitraegeAndRender() {
   if (!APP_STATE.chorId) return;
+  const cid = APP_STATE.chorId;
   // Member list is the source of truth for numbering — ensure it is loaded.
   if (_mitgliederCache.length === 0) {
     await loadMitgliederAndRender();
+    if (chorVeraltet(cid)) return;
   }
   const sb = getSupabase();
   if (!sb) return;
@@ -5927,9 +5944,10 @@ async function loadBeitraegeAndRender() {
   const { data, error } = await sb
     .from('beitraege')
     .select('*')
-    .eq('chor_id',  APP_STATE.chorId)
+    .eq('chor_id',  cid)
     .eq('halbjahr', _beitHalbjahr);
 
+  if (chorVeraltet(cid)) return;
   if (error) {
     console.error('loadBeitraege error:', error.message);
     return;
@@ -5988,16 +6006,20 @@ async function applyBeitragshoehe() {
   if (_mitgliederCache.length === 0) { alert('Keine Mitglieder vorhanden.'); return; }
 
   const sb = getSupabase();
-  const inserts = [];
+  const btn = document.getElementById('btnBeitragAnwenden');
+
+  // Ein Update für alle betroffenen Zeilen statt eines pro Mitglied
+  // (AP-0405, Befund 10). Bei 40 Mitgliedern waren das bis zu 40 Rundreisen
+  // zum Server, jede einzeln quittiert — und ein Fehler in der Mitte hinterliess
+  // einen halb angewendeten Betrag, ohne dass es jemand bemerkte.
+  const updateIds = [];
+  const inserts   = [];
 
   for (const m of _mitgliederCache) {
     const row = _beitCache[m.id];
     if (row) {
-      // Update the amount but keep the existing paid status.
-      if (Number(row.betrag) !== betrag) {
-        const { error } = await sb.from('beitraege').update({ betrag }).eq('id', row.id);
-        if (error) { console.error('applyBeitrag update error:', error.message); }
-      }
+      // Betrag angleichen, bezahlt-Status unangetastet lassen.
+      if (Number(row.betrag) !== betrag) updateIds.push(row.id);
     } else {
       inserts.push({
         chor_id:     APP_STATE.chorId,
@@ -6009,9 +6031,22 @@ async function applyBeitragshoehe() {
     }
   }
 
-  if (inserts.length) {
-    const { error } = await sb.from('beitraege').insert(inserts);
-    if (error) { console.error('applyBeitrag insert error:', error.message); alert('Fehler: ' + error.message); }
+  if (btn) { btn.disabled = true; btn.textContent = 'Übernehme …'; }
+
+  try {
+    if (updateIds.length) {
+      const { error } = await sb.from('beitraege').update({ betrag }).in('id', updateIds);
+      if (error) throw error;
+    }
+    if (inserts.length) {
+      const { error } = await sb.from('beitraege').insert(inserts);
+      if (error) throw error;
+    }
+  } catch (err) {
+    console.error('[Chorapp] applyBeitragshoehe error:', err.message);
+    alert('Fehler beim Übernehmen: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Für alle übernehmen'; }
   }
 
   await loadBeitraegeAndRender();
@@ -6082,6 +6117,7 @@ async function initBuchhaltungIfNeeded() {
 /** Loads expenses + paid contributions and refreshes the widget and table. */
 async function loadBuchhaltungAndRender() {
   if (!APP_STATE.chorId) return;
+  const cid = APP_STATE.chorId;
   const sb = getSupabase();
   if (!sb) return;
 
@@ -6089,8 +6125,9 @@ async function loadBuchhaltungAndRender() {
   const { data: ausg, error: aErr } = await sb
     .from('ausgaben')
     .select('*')
-    .eq('chor_id', APP_STATE.chorId)
+    .eq('chor_id', cid)
     .order('datum', { ascending: false });
+  if (chorVeraltet(cid)) return;
   if (aErr) { console.error('loadAusgaben error:', aErr.message); return; }
   _ausgabenCache = ausg || [];
 
@@ -6098,8 +6135,9 @@ async function loadBuchhaltungAndRender() {
   const { data: beit, error: bErr } = await sb
     .from('beitraege')
     .select('betrag, bezahlt')
-    .eq('chor_id', APP_STATE.chorId)
+    .eq('chor_id', cid)
     .eq('bezahlt', true);
+  if (chorVeraltet(cid)) return;
   if (bErr) { console.error('loadBeitraegeKasse error:', bErr.message); }
 
   const einnahmen = (beit || []).reduce((s, b) => s + Number(b.betrag), 0);
@@ -6363,13 +6401,15 @@ async function loadNotizenAndRender() {
     renderNotizenList([]);
     return;
   }
+  const cid = APP_STATE.chorId;
 
   const { data, error } = await sb
     .from('probennotizen')
     .select('id, datum, inhalt, typ, erstellt_am')
-    .eq('chor_id', APP_STATE.chorId)
+    .eq('chor_id', cid)
     .order('datum', { ascending: false });
 
+  if (chorVeraltet(cid)) return;
   if (error) {
     console.warn('[Chorapp] Probennotizen load error:', error.message);
     renderNotizenList([]);
@@ -6638,13 +6678,15 @@ async function loadLiederAndRender() {
     renderProbePlanner();
     return;
   }
+  const cid = APP_STATE.chorId;
 
   const { data, error } = await sb
     .from('lieder')
     .select('id, titel, status, pdf_pfad, notiz')
-    .eq('chor_id', APP_STATE.chorId)
+    .eq('chor_id', cid)
     .order('titel', { ascending: true });
 
+  if (chorVeraltet(cid)) return;
   if (error) {
     console.warn('[Chorapp] Lieder load error:', error.message);
     _liederCache = [];
@@ -6906,16 +6948,18 @@ function switchRepSubview(view) {
 /** Fetches all planned rehearsals of the choir and re-renders the saved list. */
 async function loadProbenAndRender() {
   const sb = getSupabase();
+  const cid = APP_STATE.chorId;
 
   _probenByDatum = {};
-  if (sb && APP_STATE.chorId) {
+  if (sb && cid) {
     const { data, error } = await sb
       .from('proben_lieder')
       .select('datum, lied_id, reihenfolge')
-      .eq('chor_id', APP_STATE.chorId)
+      .eq('chor_id', cid)
       .order('datum',       { ascending: false })
       .order('reihenfolge', { ascending: true });
 
+    if (chorVeraltet(cid)) return;
     if (error) {
       console.warn('[Chorapp] Proben load error:', error.message);
     } else {
@@ -7000,15 +7044,22 @@ async function saveProbe() {
   btn.textContent = 'Speichern …';
 
   try {
-    // Replace pattern: delete existing entries for this choir + date …
-    const { error: delErr } = await sb
+    // Reihenfolge bewusst umgedreht (AP-0405, Befund 7): erst die neue
+    // Auswahl schreiben, dann die alten Zeilen entfernen. Vorher wurde zuerst
+    // gelöscht — brach die Verbindung danach ab, war die gespeicherte Probe
+    // ersatzlos weg. Jetzt stehen im schlimmsten Fall beide Stände da: sichtbar
+    // und durch erneutes Speichern reparierbar.
+    // Ein echter Upsert scheidet aus: proben_lieder hat keinen Unique-
+    // Constraint auf (chor_id, datum, lied_id), sondern nur eine Surrogat-PK.
+    // Deshalb werden die alten Zeilen über ihre ids entfernt.
+    const { data: alte, error: selErr } = await sb
       .from('proben_lieder')
-      .delete()
+      .select('id')
       .eq('chor_id', APP_STATE.chorId)
       .eq('datum', datum);
-    if (delErr) throw delErr;
+    if (selErr) throw selErr;
+    const alteIds = (alte ?? []).map(r => r.id);
 
-    // … then insert the current selection in tap order
     if (_probeAuswahl.length > 0) {
       const rows = _probeAuswahl.map((liedId, i) => ({
         chor_id:     APP_STATE.chorId,
@@ -7018,6 +7069,14 @@ async function saveProbe() {
       }));
       const { error: insErr } = await sb.from('proben_lieder').insert(rows);
       if (insErr) throw insErr;
+    }
+
+    if (alteIds.length > 0) {
+      const { error: delErr } = await sb
+        .from('proben_lieder')
+        .delete()
+        .in('id', alteIds);
+      if (delErr) throw delErr;
     }
 
     await loadProbenAndRender();
@@ -7095,17 +7154,19 @@ async function loadHeuteAndRender() {
   if (!listEl) return;
 
   let rows = [];
-  if (sb && APP_STATE.chorId) {
+  const cid = APP_STATE.chorId;
+  if (sb && cid) {
     // Next planned rehearsal = today or later; take the earliest date.
     // notiz kommt aus Migration 010 — dauerhafter Hinweis am Lied.
     const { data, error } = await sb
       .from('proben_lieder')
       .select('datum, reihenfolge, lieder ( id, titel, status, pdf_pfad, notiz )')
-      .eq('chor_id', APP_STATE.chorId)
+      .eq('chor_id', cid)
       .gte('datum', todayStr())
       .order('datum', { ascending: true })
       .order('reihenfolge', { ascending: true });
 
+    if (chorVeraltet(cid)) return;
     if (error) {
       console.warn('[Chorapp] Tagesprobe load error:', error.message);
     } else {
@@ -7279,8 +7340,17 @@ async function saveProbeNotiz(typ) {
     .eq('typ', typ)
     .limit(1);
 
+  // Bei einem Lesefehler NICHT in den Insert-Zweig fallen: eine bereits
+  // vorhandene Notiz würde sonst ein zweites Mal angelegt.
+  if (selErr) {
+    console.error('[Chorapp] Probennotiz lookup error:', selErr.message);
+    if (btn) { btn.classList.remove('loading'); btn.textContent = 'Speichern'; }
+    alert('Fehler beim Speichern: ' + selErr.message);
+    return;
+  }
+
   let error;
-  if (!selErr && existing && existing.length) {
+  if (existing && existing.length) {
     if (inhalt) {
       ({ error } = await sb
         .from('probennotizen')
@@ -7379,14 +7449,16 @@ let _probePianistId  = '';
 async function loadPianistenAndRender() {
   const sb = getSupabase();
   if (!sb || !APP_STATE.chorId) { _pianistenCache = []; renderPianistenList(); return; }
+  const cid = APP_STATE.chorId;
 
   const { data, error } = await sb
     .from('pianisten')
     .select('id, vorname, nachname, email, telefon, aktiv')
-    .eq('chor_id', APP_STATE.chorId)
+    .eq('chor_id', cid)
     .order('nachname', { ascending: true })
     .order('vorname',  { ascending: true });
 
+  if (chorVeraltet(cid)) return;
   if (error) {
     console.warn('[Chorapp] Pianisten load error:', error.message);
     _pianistenCache = [];
@@ -7535,22 +7607,33 @@ async function loadPianistenForProbe(datum) {
 
   const sb = getSupabase();
   if (!sb || !APP_STATE.chorId) return;
+  const cid = APP_STATE.chorId;
 
   if (_pianistenCache.length === 0) {
-    const { data } = await sb
+    const { data, error } = await sb
       .from('pianisten')
       .select('id, vorname, nachname, email, telefon, aktiv')
-      .eq('chor_id', APP_STATE.chorId)
+      .eq('chor_id', cid)
       .order('nachname', { ascending: true });
+    if (chorVeraltet(cid)) return;
+    if (error) {
+      // Ohne Liste bleibt das Dropdown leer — das aber sichtbar und begründet,
+      // statt stillschweigend.
+      console.warn('[Chorapp] Pianisten load error:', error.message);
+      sel.innerHTML = '<option value="">— keiner —</option>';
+      return;
+    }
     _pianistenCache = data ?? [];
   }
 
-  const { data: zuord } = await sb
+  const { data: zuord, error: zErr } = await sb
     .from('proben_pianist')
     .select('pianist_id')
-    .eq('chor_id', APP_STATE.chorId)
+    .eq('chor_id', cid)
     .eq('datum', datum)
     .limit(1);
+  if (chorVeraltet(cid)) return;
+  if (zErr) console.warn('[Chorapp] Proben-Pianist load error:', zErr.message);
 
   _probePianistId = (zuord && zuord.length) ? zuord[0].pianist_id : '';
 
@@ -7814,18 +7897,21 @@ async function initJahresplanIfNeeded() {
  */
 async function loadTermineAndRender() {
   const sb = getSupabase();
+  const cid = APP_STATE.chorId;
 
   _termineCache = [];
   _terminLieder = {};
 
-  if (sb && APP_STATE.chorId) {
+  if (sb && cid) {
     // Ensure song cache is available for titel display (FA-071)
     if (_liederCache.length === 0) {
-      const { data: lieder } = await sb
+      const { data: lieder, error: lErr } = await sb
         .from('lieder')
         .select('id, titel, status, pdf_pfad')
-        .eq('chor_id', APP_STATE.chorId)
+        .eq('chor_id', cid)
         .order('titel', { ascending: true });
+      if (chorVeraltet(cid)) return;
+      if (lErr) console.warn('[Chorapp] Lieder load error (Jahresplan):', lErr.message);
       _liederCache = lieder ?? [];
     }
 
@@ -7833,20 +7919,28 @@ async function loadTermineAndRender() {
     const { data: termine, error: tErr } = await sb
       .from('termine')
       .select('id, datum, titel, typ, notiz, erstellt_am')
-      .eq('chor_id', APP_STATE.chorId)
+      .eq('chor_id', cid)
       .order('datum', { ascending: true });
 
+    if (chorVeraltet(cid)) return;
     if (tErr) {
       console.warn('[Chorapp] Termine load error:', tErr.message);
     } else {
       _termineCache = termine ?? [];
 
-      // Load all song assignments in a single query
+      // Load all song assignments in a single query.
+      // Auf die geladenen Termine eingegrenzt: ohne .in() liefert PostgREST
+      // die Zuordnungen ALLER Termine (RLS greift auf termine_lieder nicht,
+      // die Tabelle hat keine eigene user_id) und wächst unbegrenzt mit.
       if (_termineCache.length > 0) {
         const { data: tl, error: tlErr } = await sb
           .from('termine_lieder')
-          .select('termin_id, lied_id');
-        if (!tlErr) {
+          .select('termin_id, lied_id')
+          .in('termin_id', _termineCache.map(t => t.id));
+        if (chorVeraltet(cid)) return;
+        if (tlErr) {
+          console.warn('[Chorapp] Termin-Lieder load error:', tlErr.message);
+        } else {
           (tl ?? []).forEach(r => {
             (_terminLieder[r.termin_id] ??= []).push(r.lied_id);
           });
@@ -7863,15 +7957,17 @@ async function loadTermineAndRender() {
 /** Fetches ideen for the active choir (newest first). */
 async function loadIdeenAndRender() {
   const sb = getSupabase();
+  const cid = APP_STATE.chorId;
   _ideenCache = [];
 
-  if (sb && APP_STATE.chorId) {
+  if (sb && cid) {
     const { data, error } = await sb
       .from('ideen')
       .select('id, inhalt, erstellt_am')
-      .eq('chor_id', APP_STATE.chorId)
+      .eq('chor_id', cid)
       .order('erstellt_am', { ascending: false });
 
+    if (chorVeraltet(cid)) return;
     if (error) {
       console.warn('[Chorapp] Ideen load error:', error.message);
     } else {
@@ -8230,20 +8326,35 @@ async function submitTerminForm() {
       terminId = data.id;
     }
 
-    // Replace song assignments: delete all then re-insert (FA-071)
-    const { error: delErr } = await sb
+    // Zuordnungen abgleichen statt sie zu löschen und neu aufzubauen
+    // (AP-0405, Befund 7): erst fehlende ergänzen, dann entfallene entfernen.
+    // Schlägt das Einfügen fehl, ist der bisherige Stand unangetastet — das
+    // vorherige Voll-Delete hätte die Zuordnungen bei einem Abbruch verloren.
+    const { data: vorhandene, error: selErr } = await sb
       .from('termine_lieder')
-      .delete()
+      .select('lied_id')
       .eq('termin_id', terminId);
-    if (delErr) throw delErr;
+    if (selErr) throw selErr;
 
-    if (selectedLiedIds.length > 0) {
-      const rows = selectedLiedIds.map(liedId => ({
-        termin_id: terminId,
-        lied_id:   liedId,
-      }));
-      const { error: insErr } = await sb.from('termine_lieder').insert(rows);
+    const alt = new Set((vorhandene ?? []).map(r => r.lied_id));
+    const neu = new Set(selectedLiedIds);
+
+    const hinzu = selectedLiedIds.filter(id => !alt.has(id));
+    if (hinzu.length > 0) {
+      const { error: insErr } = await sb
+        .from('termine_lieder')
+        .insert(hinzu.map(liedId => ({ termin_id: terminId, lied_id: liedId })));
       if (insErr) throw insErr;
+    }
+
+    const entfallen = [...alt].filter(id => !neu.has(id));
+    if (entfallen.length > 0) {
+      const { error: delErr } = await sb
+        .from('termine_lieder')
+        .delete()
+        .eq('termin_id', terminId)
+        .in('lied_id', entfallen);
+      if (delErr) throw delErr;
     }
 
     closeTerminForm();

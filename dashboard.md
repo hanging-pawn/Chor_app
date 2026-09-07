@@ -49,7 +49,7 @@ active: true
 - [ ] AP-0402: send-email absichern (Empfänger-Validierung, Rate-Limit, CORS) — Code fertig 2026-09-07, Deploy blockiert durch OP-EMAIL-01 `3sp`
 - [x] AP-0403: Zeitzonenfix todayStr/bezahlt_am (2026-09-07, mit Zeitzonentests) `1sp`
 - [ ] AP-0404: Toter Code konsolidieren, FA-004 live, Tests in CI `5sp`
-- [ ] AP-0405: Datenzugriffe robust (Upsert, Race, Fehlerbehandlung, N+1) `3sp`
+- [x] AP-0405: Datenzugriffe robust (Upsert, Race, Fehlerbehandlung, N+1) — 2026-09-07, mit Verhaltenstests `3sp`
 - [ ] AP-0406: PWA & Deploy härten (Service Worker, CSP, Deploy-Scope) `5sp`
 
 ## Implementierung (übergreifend)
