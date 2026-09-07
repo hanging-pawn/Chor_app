@@ -4974,11 +4974,11 @@ function renderCard(ex, index) {
   return `
     <article class="ex-card" role="listitem">
       <div class="ex-card-top">
-        <span class="ex-chip" data-cat="${ex.kategorie}">${CATEGORY_NAMES[ex.kategorie]}</span>
+        <span class="ex-chip" data-cat="${escHtml(ex.kategorie)}">${escHtml(CATEGORY_NAMES[ex.kategorie] ?? ex.kategorie)}</span>
         <span class="ex-number" aria-label="Übung ${index + 1}">${String(index + 1).padStart(2, "0")}</span>
       </div>
-      <h3 class="ex-title">${ex.title}</h3>
-      <p class="ex-anleitung">${ex.anleitung}</p>
+      <h3 class="ex-title">${escHtml(ex.title)}</h3>
+      <p class="ex-anleitung">${escHtml(ex.anleitung)}</p>
       ${notation}
     </article>
   `;
